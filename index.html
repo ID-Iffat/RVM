@@ -1,288 +1,596 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RVM Dashboard</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RVM Dashboard - Combined</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-  body {
+  :root{
+    --bg:#333;
+    --card:#000;
+    --muted:#6c757d;
+    --accent:#007bff;
+    --plastic:#4caf50;
+    --can:#2196f3;
+    --total:#ff9800;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
     font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #333;
+    background: var(--bg);
     color: #f5f7fa;
   }
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 20px;
+    gap:10px;
   }
-  header h1 {
-    margin: 0;
-    font-size: 2rem;
+  header h1{ margin:0; font-size:1.6rem; letter-spacing:0.2px;}
+  button.enable-notif{
+    background:var(--accent);
+    color:white;
+    border:none;
+    border-radius:6px;
+    padding:8px 12px;
+    cursor:pointer;
+    font-weight:600;
   }
-  button.enable-notif {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 14px;
-    cursor: pointer;
-    font-weight: 600;
+
+  main{
+    padding:20px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    justify-content:center;
   }
-  main {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+
+  .card{
+    background:var(--card);
+    border-radius:8px;
+    padding:16px 20px;
+    width:240px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
   }
-  .card {
-    background: rgb(0, 0, 0);
-    border-radius: 8px;
-    padding: 16px 20px;
-    width: 240px; /* wider to accommodate 3 bars */
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .card h2{ margin:0 0 12px 0; font-size:1.15rem; font-weight:600;}
+  .counts{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:12px;
+    font-weight:600;
+    color:#f5f7fa;
   }
-  .card h2 {
-    margin: 0 0 16px;
-    font-size: 1.25rem;
-    font-weight: 600;
+  .count-item{ min-width:60px; text-align:center; font-size:0.95rem; }
+  .bars{ display:flex; gap:14px; margin-bottom:12px; width:100%; justify-content:center; }
+  .bar-container{ width:50px; display:flex; flex-direction:column; align-items:center; }
+  .bar{
+    width:30px;
+    height:100px;
+    background:#e0e0e0;
+    border-radius:6px;
+    position:relative;
+    overflow:hidden;
   }
-  .counts {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 12px;
-    font-weight: 600;
-    font-size: 1rem;
-    color: #f5f7fa;
+  .fill-plastic{ background:var(--plastic); width:100%; position:absolute; bottom:0; border-radius:6px 6px 0 0; height:0%; transition:height .5s ease; }
+  .fill-can{ background:var(--can); width:100%; position:absolute; bottom:0; border-radius:6px 6px 0 0; height:0%; transition:height .5s ease; }
+  .fill-total{ background:var(--total); width:100%; position:absolute; bottom:0; border-radius:6px 6px 0 0; height:0%; transition:height .5s ease; }
+  .label{ margin-top:8px; font-size:0.9rem; font-weight:600; color:#f5f7fa; }
+  .history-btn{
+    background: var(--muted);
+    border:none;
+    color:white;
+    padding:6px 12px;
+    border-radius:6px;
+    font-size:0.9rem;
+    cursor:pointer;
+    text-decoration:none;
   }
-  .count-item {
-    min-width: 60px;
-    text-align: center;
+  .history-btn:hover{ background:#5a6268; }
+
+  /* History area (hidden by default) */
+  #historyContainer{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform: translate(-50%,-50%);
+    width:92%;
+    max-width:1100px;
+    max-height:86%;
+    overflow:auto;
+    background:#11121a;
+    border-radius:10px;
+    padding:18px;
+    display:none;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    z-index:1000;
+    color:white;
   }
-  .bars {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 16px;
-    width: 100%;
-    justify-content: center;
+  #historyHeader{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  #historyHeader h2{ margin:0; font-size:1.15rem; }
+  #closeHistory{ background:#ff4d4d; border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer;}
+  #historyBody{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .chart-card{ background:#1f2130; padding:12px; border-radius:8px; width:420px; height:300px; box-sizing:border-box; }
+  table{ width:100%; border-collapse:collapse; margin-top:12px; color:white; }
+  th,td{ padding:8px 10px; border-bottom:1px solid #333; font-size:14px; }
+  th{ background:#2b2b42; }
+
+  /* overlay backdrop */
+  #backdrop{
+    position:fixed;
+    left:0;top:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    z-index:900;
   }
-  .bar-container {
-    width: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+
+  /* responsive */
+  @media (max-width:900px){
+    main{ padding:14px; }
+    .card{ width:45%; min-width:200px; }
+    .chart-card{ width:100%; height:260px; }
+    #historyContainer{ width:96%; max-width:760px; max-height:90%; }
   }
-  .bar {
-    width: 30px;
-    height: 100px;
-    background: #e0e0e0;
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
-  }
-  .fill-plastic {
-    background-color: #4caf50;
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-    border-radius: 6px 6px 0 0;
-    height: 70%;
-  }
-  .fill-can {
-    background-color: #2196f3;
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-    border-radius: 6px 6px 0 0;
-    height: 40%;
-  }
-  .fill-total {
-    background-color: #ff9800;
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-    border-radius: 6px 6px 0 0;
-    height: 85%;
-  }
-  .label {
-    margin-top: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-  .history-btn {
-    background-color: #6c757d;
-    border: none;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
-  }
-  .history-btn:hover {
-    background-color: #5a6268;
+  @media (max-width:520px){
+    .card{ width:100%; }
   }
 </style>
 </head>
 <body>
+
 <header>
-  <button class="enable-notif" type="button">Enable Notification</button>
+  <button class="enable-notif" id="notifBtn" type="button">Enable Notifications</button>
   <h1>RVM Dashboard</h1>
-  <div style="width:120px;"></div> <!-- spacer for balanced flex -->
+  <div style="width:120px;"></div>
 </header>
-<main>
-  <section class="card" aria-label="RVM 1">
+
+<main id="dashboard">
+  <!-- RVM cards. Values for CAN are read from data-can attribute.
+       Initial plastic values will be overwritten by live API fetch. -->
+  <section class="card" aria-label="RVM 1" data-rvm="1">
     <h2>RVM 1</h2>
     <div class="counts">
-      <div class="count-item">Plastic: 70</div>
-      <div class="count-item">Can: 40</div>
-      <div class="count-item">Total: 85</div>
+      <div class="count-item">Plastic: <span class="plastic-val">70</span></div>
+      <div class="count-item">Can: <span class="can-val" data-can="40">40</span></div>
+      <div class="count-item">Total: <span class="total-val">110</span></div>
     </div>
     <div class="bars">
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-plastic" style="height: 70%;"></div>
-        </div>
+        <div class="bar"><div class="fill-plastic" style="height:70%"></div></div>
         <div class="label">Plastic</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-can" style="height: 40%;"></div>
-        </div>
+        <div class="bar"><div class="fill-can" style="height:40%"></div></div>
         <div class="label">Can</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-total" style="height: 85%;"></div>
-        </div>
+        <div class="bar"><div class="fill-total" style="height:85%"></div></div>
         <div class="label">Total</div>
       </div>
     </div>
-    <a href="history/rvm1.html" class="history-btn" role="button">History</a>
+    <button class="history-btn" data-rvm="1">History</button>
   </section>
-  <section class="card" aria-label="RVM 2">
+
+  <section class="card" aria-label="RVM 2" data-rvm="2">
     <h2>RVM 2</h2>
     <div class="counts">
-      <div class="count-item">Plastic: 70</div>
-      <div class="count-item">Can: 40</div>
-      <div class="count-item">Total: 85</div>
+      <div class="count-item">Plastic: <span class="plastic-val">70</span></div>
+      <div class="count-item">Can: <span class="can-val" data-can="40">40</span></div>
+      <div class="count-item">Total: <span class="total-val">110</span></div>
     </div>
     <div class="bars">
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-plastic" style="height: 55%;"></div>
-        </div>
+        <div class="bar"><div class="fill-plastic" style="height:55%"></div></div>
         <div class="label">Plastic</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-can" style="height: 75%;"></div>
-        </div>
+        <div class="bar"><div class="fill-can" style="height:75%"></div></div>
         <div class="label">Can</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-total" style="height: 90%;"></div>
-        </div>
+        <div class="bar"><div class="fill-total" style="height:90%"></div></div>
         <div class="label">Total</div>
       </div>
     </div>
-    <a href="history/rvm2.html" class="history-btn" role="button">History</a>
+    <button class="history-btn" data-rvm="2">History</button>
   </section>
-  <section class="card" aria-label="RVM 3">
+
+  <section class="card" aria-label="RVM 3" data-rvm="3">
     <h2>RVM 3</h2>
     <div class="counts">
-      <div class="count-item">Plastic: 70</div>
-      <div class="count-item">Can: 40</div>
-      <div class="count-item">Total: 85</div>
+      <div class="count-item">Plastic: <span class="plastic-val">70</span></div>
+      <div class="count-item">Can: <span class="can-val" data-can="40">40</span></div>
+      <div class="count-item">Total: <span class="total-val">110</span></div>
     </div>
     <div class="bars">
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-plastic" style="height: 80%;"></div>
-        </div>
+        <div class="bar"><div class="fill-plastic" style="height:80%"></div></div>
         <div class="label">Plastic</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-can" style="height: 65%;"></div>
-        </div>
+        <div class="bar"><div class="fill-can" style="height:65%"></div></div>
         <div class="label">Can</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-total" style="height: 90%;"></div>
-        </div>
+        <div class="bar"><div class="fill-total" style="height:90%"></div></div>
         <div class="label">Total</div>
       </div>
     </div>
-    <a href="history/rvm3.html" class="history-btn" role="button">History</a>
+    <button class="history-btn" data-rvm="3">History</button>
   </section>
-  <section class="card" aria-label="RVM 4">
+
+  <section class="card" aria-label="RVM 4" data-rvm="4">
     <h2>RVM 4</h2>
     <div class="counts">
-      <div class="count-item">Plastic: 70</div>
-      <div class="count-item">Can: 40</div>
-      <div class="count-item">Total: 85</div>
+      <div class="count-item">Plastic: <span class="plastic-val">70</span></div>
+      <div class="count-item">Can: <span class="can-val" data-can="40">40</span></div>
+      <div class="count-item">Total: <span class="total-val">110</span></div>
     </div>
     <div class="bars">
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-plastic" style="height: 30%;"></div>
-        </div>
+        <div class="bar"><div class="fill-plastic" style="height:30%"></div></div>
         <div class="label">Plastic</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-can" style="height: 90%;"></div>
-        </div>
+        <div class="bar"><div class="fill-can" style="height:90%"></div></div>
         <div class="label">Can</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-total" style="height: 95%;"></div>
-        </div>
+        <div class="bar"><div class="fill-total" style="height:95%"></div></div>
         <div class="label">Total</div>
       </div>
     </div>
-    <a href="history/rvm4.html" class="history-btn" role="button">History</a>
+    <button class="history-btn" data-rvm="4">History</button>
   </section>
-  <section class="card" aria-label="RVM 5">
+
+  <section class="card" aria-label="RVM 5" data-rvm="5">
     <h2>RVM 5</h2>
     <div class="counts">
-      <div class="count-item">Plastic: 70</div>
-      <div class="count-item">Can: 40</div>
-      <div class="count-item">Total: 85</div>
+      <div class="count-item">Plastic: <span class="plastic-val">70</span></div>
+      <div class="count-item">Can: <span class="can-val" data-can="40">40</span></div>
+      <div class="count-item">Total: <span class="total-val">110</span></div>
     </div>
     <div class="bars">
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-plastic" style="height: 50%;"></div>
-        </div>
+        <div class="bar"><div class="fill-plastic" style="height:50%"></div></div>
         <div class="label">Plastic</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-can" style="height: 20%;"></div>
-        </div>
+        <div class="bar"><div class="fill-can" style="height:20%"></div></div>
         <div class="label">Can</div>
       </div>
       <div class="bar-container">
-        <div class="bar">
-          <div class="fill-total" style="height: 65%;"></div>
-        </div>
+        <div class="bar"><div class="fill-total" style="height:65%"></div></div>
         <div class="label">Total</div>
       </div>
     </div>
-    <a href="history/rvm5.html" class="history-btn" role="button">History</a>
+    <button class="history-btn" data-rvm="5">History</button>
   </section>
 </main>
+
+<!-- History overlay + backdrop -->
+<div id="backdrop"></div>
+
+<div id="historyContainer" aria-hidden="true">
+  <div id="historyHeader">
+    <h2>History for <span id="historyTitle">-</span></h2>
+    <div>
+      <button id="closeHistory">Close</button>
+    </div>
+  </div>
+
+  <div id="historyBody">
+    <div class="chart-card">
+      <canvas id="dailyChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <canvas id="weeklyChart"></canvas>
+    </div>
+    <div style="width:100%; margin-top:12px;">
+      <table>
+        <thead>
+          <tr><th>Tanggal</th><th>Jumlah Sampah</th></tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+      </table>
+
+      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+        <button id="prevWeekBtn">⬅ Previous</button>
+        <button id="nextWeekBtn">Next ➡</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Configuration ----------
+   - API_URL: endpoint that returns the plastic count for a given readVpin.
+     It is expected to return a plain number (string/number).
+   - SHEET_API: Google Apps Script URL that returns JSON history for a bin:
+     expected query: ?bin=<rvmId>
+     expected response: array of { date: "...", count: "..." } OR numeric excel dates
+*/
+
+const API_URL = "https://tps-1.iffatadibamusaffa.workers.dev/";
+const SHEET_API = "https://script.google.com/macros/s/AKfycbxB2LOunFSPXn282LsbmnVKK6iQiMEbH83kcqDp_x4bA3ykeOnUd1mMC8ureJyFnVsu/exec";
+
+/* Map RVM -> vpin used by backend for plastic read */
+const bins = [
+  { rvm:1, readVpin: "V1" },
+  { rvm:2, readVpin: "V3" },
+  { rvm:3, readVpin: "V5" },
+  { rvm:4, readVpin: "V7" },
+  { rvm:5, readVpin: "V9" }
+];
+
+let lastNotifiedLevels = {}; // per rvm
+
+/* Notification permission */
+document.getElementById('notifBtn').addEventListener('click', requestNotificationPermission);
+
+function requestNotificationPermission(){
+  if("Notification" in window){
+    Notification.requestPermission().then(p=>{
+      if(p === "granted") alert("Notifications enabled!");
+      else alert("Notifications not granted.");
+    });
+  }else{
+    alert("Notifications not supported in this browser.");
+  }
+}
+
+function sendNotification(title, body){
+  if(Notification.permission === "granted"){
+    new Notification(title, { body, icon: "https://png.pngtree.com/png-vector/20190319/ourlarge/pngtree-vector-waste-icon-png-image_845906.jpg" });
+  }
+}
+
+/* Utility - clamp percentage to 0..100 */
+function pctClamp(v){ v = Math.round(v); if(isNaN(v)) return 0; if(v<0) return 0; if(v>100) return 100; return v; }
+
+/* Update a single card DOM using plastic (live) and can (static attr) */
+function updateCardFromValues(cardEl, plasticCount){
+  const canEl = cardEl.querySelector('.can-val');
+  const plasticEl = cardEl.querySelector('.plastic-val');
+  const totalEl = cardEl.querySelector('.total-val');
+  const fillPlastic = cardEl.querySelector('.fill-plastic');
+  const fillCan = cardEl.querySelector('.fill-can');
+  const fillTotal = cardEl.querySelector('.fill-total');
+
+  // can value read from data-can attr (or current text)
+  let canVal = Number(canEl.getAttribute('data-can'));
+  if(isNaN(canVal)){
+    canVal = Number(canEl.innerText) || 0;
+  }
+
+  const plasticVal = Number(plasticCount) || 0;
+  const totalVal = plasticVal + canVal;
+
+  // Update textual values
+  plasticEl.innerText = plasticVal;
+  canEl.innerText = canVal;
+  totalEl.innerText = totalVal;
+
+  // Calculate percentages for bars:
+  // We'll interpret counts relative to a capacity. Choose capacity = 150 by default.
+  // You can change capacityPerBin map if needed.
+  const capacity = 150;
+  const pPct = pctClamp((plasticVal / capacity) * 100);
+  const cPct = pctClamp((canVal / capacity) * 100);
+  const tPct = pctClamp((totalVal / (capacity*1.2)) * 100); // total scale slightly bigger
+
+  fillPlastic.style.height = pPct + "%";
+  fillCan.style.height = cPct + "%";
+  fillTotal.style.height = tPct + "%";
+}
+
+/* Fetch plastic counts for all bins (only plastic) */
+async function fetchCounts(){
+  const cardEls = document.querySelectorAll('.card');
+  for(let mapping of bins){
+    const cardEl = Array.from(cardEls).find(c => Number(c.getAttribute('data-rvm')) === mapping.rvm);
+    if(!cardEl) continue;
+
+    try{
+      const resp = await fetch(`${API_URL}/?action=getCount&vpin=${mapping.readVpin}`);
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      const raw = text.trim();
+      const count = Number(raw) || 0;
+
+      // update card DOM
+      updateCardFromValues(cardEl, count);
+
+      // Notification logic: create level buckets (every 50)
+      const level = Math.floor(count / 50);
+      const key = `rvm${mapping.rvm}`;
+      if(!isNaN(count) && level > 0 && level <= 6 && lastNotifiedLevels[key] !== level){
+        sendNotification(`RVM ${mapping.rvm} - ${level}/6 Full`, `RVM ${mapping.rvm} reached ~${level*50} plastic units.`);
+        lastNotifiedLevels[key] = level;
+      }
+
+    }catch(err){
+      console.error(`Error fetching RVM ${mapping.rvm}:`, err);
+      // If error, show "Err" on plastic value
+      const plasticEl = cardEl.querySelector('.plastic-val');
+      plasticEl.innerText = "Err";
+    }
+  }
+}
+
+/* Initial fetch and periodic refresh */
+fetchCounts();
+setInterval(fetchCounts, 5000); // every 5 seconds
+
+/* ---------- History / Charts integration (replaces static history pages) ---------- */
+
+let historyData = [];
+let weekIndex = 0;
+let dailyChartInstance = null;
+let weeklyChartInstance = null;
+
+async function showHistory(rvmId){
+  // show overlay
+  document.getElementById('backdrop').style.display = 'block';
+  const hist = document.getElementById('historyContainer');
+  hist.style.display = 'block';
+  hist.setAttribute('aria-hidden','false');
+  document.getElementById('historyTitle').innerText = `RVM ${rvmId}`;
+
+  // fetch sheet
+  const tableBody = document.getElementById('historyTable');
+  tableBody.innerHTML = `<tr><td colspan="2">Loading...</td></tr>`;
+  try{
+    const response = await fetch(`${SHEET_API}?bin=${rvmId}`);
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    historyData = await response.json();
+
+    if(!Array.isArray(historyData) || historyData.length === 0){
+      tableBody.innerHTML = `<tr><td colspan="2">No history available.</td></tr>`;
+      return;
+    }
+
+    // ensure newest-first ordering
+    historyData = historyData.reverse();
+
+    weekIndex = 0;
+    renderWeek();
+
+    // set navigation handlers
+    document.getElementById("prevWeekBtn").onclick = () => {
+      if ((weekIndex + 1) * 7 < historyData.length) {
+        weekIndex++;
+        renderWeek();
+      }
+    };
+    document.getElementById("nextWeekBtn").onclick = () => {
+      if (weekIndex > 0) {
+        weekIndex--;
+        renderWeek();
+      }
+    };
+
+  }catch(err){
+    console.error("History fetch error:", err);
+    tableBody.innerHTML = `<tr><td colspan="2">Error loading history.</td></tr>`;
+  }
+}
+
+/* Convert potential Excel numeric date to ISO string (if needed). */
+function fmtDate(rowDate){
+  // if string and contains T, take date part
+  if(typeof rowDate === 'string'){
+    return rowDate.includes('T') ? rowDate.split('T')[0] : rowDate;
+  }
+  // if numeric (Excel days) convert
+  if(typeof rowDate === 'number'){
+    const dateObj = new Date((rowDate - 25569) * 86400 * 1000);
+    return dateObj.toISOString().split('T')[0];
+  }
+  return String(rowDate);
+}
+
+function renderWeek(){
+  const start = weekIndex * 7;
+  const weekData = historyData.slice(start, start + 7);
+  if(!weekData || weekData.length === 0){
+    document.getElementById('historyTable').innerHTML = `<tr><td colspan="2">No data</td></tr>`;
+    return;
+  }
+
+  const labels = weekData.map(r => fmtDate(r.date));
+  const values = weekData.map(r => Number(r.count) || 0);
+  const weeklyTotal = values.reduce((s,v) => s+v, 0);
+
+  // destroy old charts if present
+  if(dailyChartInstance) dailyChartInstance.destroy();
+  if(weeklyChartInstance) weeklyChartInstance.destroy();
+
+  // Daily chart
+  const dCtx = document.getElementById('dailyChart').getContext('2d');
+  dailyChartInstance = new Chart(dCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Daily Trash Count',
+        data: values,
+        backgroundColor: '#4d79ff'
+      }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } } }
+  });
+
+  // Weekly total chart
+  const wCtx = document.getElementById('weeklyChart').getContext('2d');
+  weeklyChartInstance = new Chart(wCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Total dalam seminggu'],
+      datasets: [{
+        label: 'Total Trash Count',
+        data: [weeklyTotal],
+        backgroundColor: '#ff4d4d'
+      }]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false } } }
+  });
+
+  // Fill table
+  const tableBody = document.getElementById('historyTable');
+  tableBody.innerHTML = '';
+  weekData.forEach(row => {
+    const formattedDate = fmtDate(row.date);
+    const count = Number(row.count) || 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${formattedDate}</td><td>${count}</td>`;
+    tableBody.appendChild(tr);
+  });
+}
+
+/* Close history overlay */
+function closeHistory(){
+  document.getElementById('backdrop').style.display = 'none';
+  const hist = document.getElementById('historyContainer');
+  hist.style.display = 'none';
+  hist.setAttribute('aria-hidden','true');
+
+  // destroy charts to free memory
+  if(dailyChartInstance){ dailyChartInstance.destroy(); dailyChartInstance = null; }
+  if(weeklyChartInstance){ weeklyChartInstance.destroy(); weeklyChartInstance = null; }
+}
+
+/* Attach click handlers on history buttons (delegation) */
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.history-btn');
+  if(btn){
+    const rvm = Number(btn.getAttribute('data-rvm')) || Number(btn.closest('.card').getAttribute('data-rvm'));
+    if(rvm) showHistory(rvm);
+  }
+});
+document.getElementById('closeHistory').addEventListener('click', closeHistory);
+document.getElementById('backdrop').addEventListener('click', closeHistory);
+
+/* On page load, ensure each card's total and bar heights reflect initial DOM values */
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('.card').forEach(card=>{
+    // read initial plastic/can texts and update bars
+    const plasticRaw = card.querySelector('.plastic-val').innerText;
+    updateCardFromValues(card, Number(plasticRaw) || 0);
+  });
+});
+</script>
+
 </body>
 </html>
