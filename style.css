@@ -64,9 +64,9 @@ main{padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260p
 }
 
 /* Fill colors */
-.fill-plastic { background: var(--plastic); }
-.fill-can     { background: var(--can); }
-.fill-total   { background: var(--total); }
+.fill-plastic-bar { background: var(--plastic); }
+.fill-can-bar     { background: var(--can); }
+.fill-total-bar   { background: var(--total); }
 
 .bar-container .label {
   margin-top: 6px;
