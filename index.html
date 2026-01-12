@@ -11,7 +11,7 @@
 
 <header>
   <button class="enable-notif" id="notifBtn">Enable Notifications</button>
-  <h2>RVM Dashboard</h2>
+  <h1>RVM Dashboard</h1>
   <div style="width:120px;"></div>
 </header>
 
@@ -60,16 +60,38 @@
     <div><button id="closeHistory">Close</button></div>
   </div>
   <div id="historyBody">
-    <div class="chart-card"><canvas id="dailyChart"></canvas></div>
-    <div class="chart-card"><canvas id="weeklyChart"></canvas></div>
-    <div style="width:100%; margin-top:12px;">
-      <table>
-        <thead><tr><th>Date</th><th>Plastic</th><th>Can</th><th>Total</th></tr></thead>
-        <tbody id="historyTable"></tbody>
-      </table>
-      <div class="history-nav">
-        <button id="prevWeekBtn">⬅ Previous</button>
-        <button id="nextWeekBtn">Next ➡</button>
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+      <div class="chart-card">
+        <div class="chart-title">Daily Chart</div>
+        <canvas id="dailyChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Weekly Chart</div>
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-column">
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Plastic</th>
+              <th>Can</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+
+        <div class="history-nav">
+          <button id="prevWeekBtn" class="history-btn">⬅ Previous</button>
+          <button id="nextWeekBtn" class="history-btn">Next ➡</button>
+        </div>
       </div>
     </div>
   </div>
@@ -232,7 +254,7 @@ function renderWeek(){
   const start=weekIndex*7;
   const weekData=historyData.slice(start,start+7);
   if(!weekData||weekData.length===0){document.getElementById('historyTable').innerHTML='<tr><td colspan="4">No data</td></tr>'; destroyCharts(); return;}
-  const labels=weekData.map(r=>fmtDate(r.date));
+  const labels=weekData.map(r=>fmtDate(r.timestamp));
   const plasticSeries=weekData.map(r=>Number(r.plastic||0));
   const canSeries=weekData.map(r=>Number(r.can||0));
   const totals=plasticSeries.map((p,i)=>p+(canSeries[i]||0));
@@ -251,7 +273,7 @@ function renderWeek(){
   });
 
   const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
-  weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.date)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
+  weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
 
   document.getElementById('prevWeekBtn').disabled=((start+7)>=historyData.length);
   document.getElementById('nextWeekBtn').disabled=(weekIndex===0);
@@ -288,5 +310,4 @@ document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch(
 </script>
 
 </body>
-
 </html>
