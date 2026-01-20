@@ -188,6 +188,62 @@ button{font-family:inherit;}
   grid-template-rows: 1fr 1fr;
   gap: 16px;
 }
+
 .right-column {
   display: flex;
+}
+
+@media (max-width: 768px) {
+
+  .chart-card canvas {
+    max-height: 240px;
+  }
+  /* Only affect history overlay */
+  #historyBody {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  /* Let table size naturally on mobile */
+  .table-scroll {
+    flex: none;
+    overflow-y: visible;
+  }
+
+  /* Disable desktop columns */
+  .left-column,
+  .right-column {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Charts go back to vertical flow */
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Table behaves like original version */
+  .table-card {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Table scrolls naturally */
+  .table-scroll {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+  }
+
+  /* Buttons behave like original mobile view */
+  .history-nav {
+    order: -1;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
 }
