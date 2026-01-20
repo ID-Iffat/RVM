@@ -86,7 +86,7 @@ main{padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260p
   transform: translate(-50%, -50%);
 
   width: 96vw;
-  height: 94vh;
+  height: 88vh;
   max-width: none;
   max-height: none;
 
@@ -247,3 +247,4 @@ button{font-family:inherit;}
     margin-top: 10px;
   }
 }
+
