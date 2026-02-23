@@ -262,7 +262,7 @@ function renderWeek(){
 
   destroyCharts();
   dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
-    type:'bar',
+    type:'line',
     data:{ labels, datasets:[{label:'Plastic',data:plasticSeries,stack:'stack1',borderRadius:6},{label:'Can',data:canSeries,stack:'stack1',borderRadius:6}]},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
   });
@@ -310,4 +310,5 @@ document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch(
 </script>
 
 </body>
+
 </html>
