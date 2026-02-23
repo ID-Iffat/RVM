@@ -257,18 +257,19 @@ function renderWeek(){
   const labels=weekData.map(r=>fmtDate(r.timestamp));
   const plasticSeries=weekData.map(r=>Number(r.plastic||0));
   const canSeries=weekData.map(r=>Number(r.can||0));
+  const totalDaily=weekData.map(r=>Number(r.plastic+r.can||0));
   const totals=plasticSeries.map((p,i)=>p+(canSeries[i]||0));
   const weeklyTotal=totals.reduce((s,v)=>s+v,0);
 
   destroyCharts();
   dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
     type:'line',
-    data:{ labels, datasets:[{label:'Plastic',data:plasticSeries,stack:'stack1',borderRadius:6},{label:'Can',data:canSeries,stack:'stack1',borderRadius:6}]},
+    data:{ labels, datasets:[{label:'Plastic',data:plasticSeries,stack:'stack1',borderColor:'#3b82f6',backgroundColor:'#3b82f6'},{label:'Can',data:canSeries,stack:'stack2',borderColor:'#f59e0b',backgroundColor:'#f59e0b'},{label:'Total',data:totalDaily,stack:'stack3',borderColor:'#10b981',backgroundColor:'#10b981'}]},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
   });
   weeklyChartInstance=new Chart(document.getElementById('weeklyChart').getContext('2d'),{
     type:'bar',
-    data:{ labels:['Plastic','Can','Total'], datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],borderRadius:6}]},
+    data:{ labels:['Plastic','Can','Total'], datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],borderRadius:6,backgroundColor: ['#3b82f6','#f59e0b','#10b981']}]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
   });
 
