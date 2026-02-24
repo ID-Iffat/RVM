@@ -104,11 +104,12 @@
 const API_URL = "https://rvm.iffatadibamusaffa.workers.dev";
 const SHEET_API = "https://script.google.com/macros/s/AKfycbwIo7PtFfIXxJERKnzbucr0E1c32eZtys_XRM57FwhXtshHO65VF_qBuy7-VF8v1mtUkw/exec";
 const DEPLOYED_DEVICE_COUNT = 3;
-const FETCH_INTERVAL_MS = 5000;
+const FETCH_INTERVAL_MS = 5000;         // ngambil data setiap 5 detik
+const NOTIFY_INTERVAL = 60 * 60 * 1000; // notif setiap 1 hour
 
 function pctClamp(v){ v=Math.round(v); return isNaN(v)?0:Math.max(0,Math.min(100,v)); }
 
-// Notifications
+// Notifications enable/disable function
 let lastNotifiedLevels = {};
 function shouldNotify(key, level){
   const prev = lastNotifiedLevels[key];
@@ -235,22 +236,22 @@ async function fetchCounts(){
       if (locationEl) {
         locationEl.innerText = device.location || '-';
       }
-      [{key: `rvm${rvmId}-plastic`,level: Math.ceil(pctClamp(values.pPct) / 25),type: 'Plastic',actual: pctClamp(values.pPct)},
-      { key: `rvm${rvmId}-can`,level: Math.ceil(pctClamp(values.cPct) / 25),type: 'Can',actual: pctClamp(values.cPct)}
-      ].forEach(obj => {
-        if (shouldNotify(obj.key, obj.level) && obj.level >= 1) {
+      // Notification sends function
+      ['plastic', 'can'].forEach(type => {const pct = Math.round(pctClamp(values[type === 'plastic' ? 'pPct' : 'cPct']));
+      const key = `rvm${rvmId}-${type}`;
+      const storageKey = `notify-${key}`;
+      const now = Date.now();
+      if (pct >= 75) {const lastSent = Number(localStorage.getItem(storageKey)) || 0;
+        if (now - lastSent >= NOTIFY_INTERVAL) {
           sendNotification(
-            `RVM ${rvmId} Volume Alert`,
-            `${obj.type} Threshold ${obj.actual}% reached`
-          );
-        }
-        resetNotificationLevelIfLower(obj.key, obj.level);
-      });
+            `RVM ${rvmId} Volume Alert`,`${type.charAt(0).toUpperCase() + type.slice(1)} Threshold ${pct}% reached`);
+            localStorage.setItem(storageKey, now);}
+      } else {localStorage.removeItem(storageKey);} // reset when below threshold
+    });
     });
   } catch(err){
     console.error("Error fetching counts:", err);
   }
-
   isFetchingCounts=false;
 }
 function startAutoFetch(){ if(fetchIntervalId) clearInterval(fetchIntervalId); fetchCounts().catch(console.error); fetchIntervalId=setInterval(fetchCounts,FETCH_INTERVAL_MS);}
