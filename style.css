@@ -80,10 +80,16 @@ main{
   box-shadow:0 30px 60px rgba(0,0,0,.55);
 }
 
-.card h2{
-  margin-top:0;
-  margin-bottom:18px;
-  font-weight:600;
+.card h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rvm-location {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-weight: normal;
 }
 
 /* COUNT ROWS */
