@@ -235,14 +235,16 @@ async function fetchCounts(){
       if (locationEl) {
         locationEl.innerText = device.location || '-';
       }
-
-      // notifications
-      [{key:`rvm${rvmId}-plastic`, level: Math.ceil(pctClamp(values.pPct)/25)},
-       {key:`rvm${rvmId}-can`, level: Math.ceil(pctClamp(values.cPct)/25)}].forEach(obj=>{
-         if(shouldNotify(obj.key,obj.level)&&obj.level>=1){
-           sendNotification(`RVM ${rvmId} Volume Alert`,`Threshold ${obj.level*25}% reached`);
-         }
-         resetNotificationLevelIfLower(obj.key,obj.level);
+      [{key: `rvm${rvmId}-plastic`,level: Math.ceil(pctClamp(values.pPct) / 25),type: 'Plastic',actual: pctClamp(values.pPct)},
+      { key: `rvm${rvmId}-can`,level: Math.ceil(pctClamp(values.cPct) / 25),type: 'Can',actual: pctClamp(values.cPct)}
+      ].forEach(obj => {
+        if (shouldNotify(obj.key, obj.level) && obj.level >= 1) {
+          sendNotification(
+            `RVM ${rvmId} Volume Alert`,
+            `${obj.type} Threshold ${obj.actual}% reached`
+          );
+        }
+        resetNotificationLevelIfLower(obj.key, obj.level);
       });
     });
   } catch(err){
