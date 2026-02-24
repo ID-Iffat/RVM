@@ -284,9 +284,8 @@ function renderWeek(){
   const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
   weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
 
-  
-  document.getElementById('prevWeekBtn').disabled=((start+7)>=historyData.length);
-  document.getElementById('nextWeekBtn').disabled=(weekIndex===0);
+  document.getElementById('nextWeekBtn').disabled=((start+7)>=historyData.length);
+  document.getElementById('prevWeekBtn').disabled=(weekIndex===0);
 }
 
 async function showHistory(rvmId){
@@ -301,10 +300,10 @@ async function showHistory(rvmId){
     if(!Array.isArray(data)){ if(typeof data==='object' && data!==null){ data=Object.keys(data).map(k=>{ const v=data[k]; return {date:k, plastic:v.plastic||v.p, can:v.can||v.c};});} else data=[];}
     historyData = data
       .filter(row => row.device_id === `RVM${rvmId}`)
-      .sort((a,b)=> new Date(b.timestamp) - new Date(a.timestamp));
+      .sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp));
     weekIndex=0; renderWeek();
-    document.getElementById("prevWeekBtn").onclick=()=>{if((weekIndex+1)*7<historyData.length){weekIndex++;renderWeek();}};
-    document.getElementById("nextWeekBtn").onclick=()=>{if(weekIndex>0){weekIndex--;renderWeek();}};
+    document.getElementById("nextWeekBtn").onclick=()=>{if((weekIndex+1)*7<historyData.length){weekIndex++;renderWeek();}};
+    document.getElementById("prevWeekBtn").onclick=()=>{if(weekIndex>0){weekIndex--;renderWeek();}};
   }catch(err){console.error("History fetch error:",err); tableBody.innerHTML='<tr><td colspan="4">Error loading history.</td></tr>'; destroyCharts();}
 }
 
