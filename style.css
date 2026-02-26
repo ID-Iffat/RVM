@@ -84,12 +84,53 @@ main{
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom:2px;
 }
 
 .rvm-location {
   font-size: 0.85rem;
   opacity: 0.7;
   font-weight: normal;
+}
+
+.status-dot{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  margin-left:8px;
+  margin-right:4px;
+}
+
+.status-dot.online{
+  background:#22c55e;
+}
+
+.status-dot.offline{
+  background:#ef4444;
+}
+
+.status-text{
+  font-size:0.9rem;
+  color:var(--muted);
+}
+
+/* .rvm-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:0.85rem;
+  color:var(--muted);
+  margin-top:2px;
+} */
+
+.rvm-uptime,
+.rvm-lastseen{
+  font-size:0.85rem;
+  color:var(--muted);
+  margin-top:2px;
+  white-space:nowrap;
+  margin-bottom:2px;
 }
 
 /* COUNT ROWS */
