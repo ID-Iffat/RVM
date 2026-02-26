@@ -18,9 +18,18 @@
   <!-- Template card -->
   <section class="card" data-template="true" aria-label="RVM 1">
     <h2>
-      <span class="rvm-title">RVM 1</span>
-      <span class="rvm-location">-</span>
+      <div>
+        <span class="rvm-title">RVM 1</span>
+        <span class="status-dot offline"></span>
+        <span class="status-text">Offline</span>
+      </div>
+        <div class="rvm-location">-</div>
     </h2>
+    <div class="rvm-meta">
+      <div class="rvm-uptime">Uptime: -</div>
+      <div class="rvm-lastseen">Last seen: -</div>
+    </div>
+
     <!-- Counts -->
     <div class="counts columns-3 row-counts">
       <div class="col">Plastic: <span class="plastic-val">-</span></div>
@@ -102,7 +111,7 @@
 <script>
 const API_URL = "https://rvm.iffatadibamusaffa.workers.dev";
 const SHEET_API = "https://script.google.com/macros/s/AKfycbwWp4pB_94dkI62JVTzkMlQVBMVoV-tTcNYcjexaWc7jeuTL6n4PYeXHurkKeHjCOpHuA/exec";
-const DEPLOYED_DEVICE_COUNT = 4;
+const DEPLOYED_DEVICE_COUNT = 10;
 const FETCH_INTERVAL_MS = 5000;         // ngambil data setiap 5 detik
 const NOTIFY_INTERVAL = 60 * 60 * 1000; // notif setiap 1 hour
 
@@ -129,6 +138,22 @@ document.getElementById('notifBtn').addEventListener('click',()=>{
   else alert("Notifications not supported");
 });
 
+function formatUptime(sec){
+  sec = Number(sec)||0;
+  const d = Math.floor(sec/86400);
+  const h = Math.floor((sec%86400)/3600);
+  const m = Math.floor((sec%3600)/60);
+  if(d>0) return `${d}d ${h}h`;
+  if(h>0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function formatLastSeen(ts){
+  if(!ts) return "-";
+  const date = new Date(ts);
+  return date.toLocaleString();
+}
+
 // Generate cards
 function generateCards(count){
   const dashboard=document.getElementById('dashboard');
@@ -139,6 +164,11 @@ function generateCards(count){
     clone.setAttribute('data-rvm',i);
     clone.querySelector('.rvm-title').innerText = `RVM ${i}`;
     clone.querySelector('.rvm-location').innerText = '-';
+    clone.querySelector('.status-dot').classList.remove('online','offline');
+    clone.querySelector('.status-dot').classList.add('offline');
+    clone.querySelector('.status-text').innerText='Offline';
+    clone.querySelector('.rvm-uptime').innerText='Uptime: -';
+    clone.querySelector('.rvm-lastseen').innerText='Last seen: -';
     
     // Reset counts
     clone.querySelector('.plastic-val').innerText='-';
@@ -224,6 +254,20 @@ async function fetchCounts(){
       const card = document.querySelector(`.card[data-rvm="${rvmId}"]`);
       if(!card) return;
 
+      const statusDot = card.querySelector('.status-dot');
+      const statusText = card.querySelector('.status-text');
+      const uptimeEl = card.querySelector('.rvm-uptime');
+      const lastSeenEl = card.querySelector('.rvm-lastseen');
+      statusDot.classList.remove('online','offline');
+      if(device.status==="online"){
+        statusDot.classList.add('online');
+        statusText.innerText="Online";
+      }else{
+        statusDot.classList.add('offline');
+        statusText.innerText="Offline";
+      }
+      uptimeEl.innerText ="Uptime: " + formatUptime(device.uptime);
+      lastSeenEl.innerText ="Last seen: " + formatLastSeen(device.lastSeen);
       const values = {
         plastic: Number(device.plastic || 0),
         can: Number(device.can || 0),
@@ -324,6 +368,3 @@ document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch(
 
 </body>
 </html>
-
-
-
