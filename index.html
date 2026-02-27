@@ -29,21 +29,18 @@
       <div class="rvm-uptime">Uptime: -</div>
       <div class="rvm-lastseen">Last seen: -</div>
     </div>
-
     <!-- Counts -->
     <div class="counts columns-3 row-counts">
       <div class="col">Plastic: <span class="plastic-val">-</span></div>
       <div class="col">Can: <span class="can-val">-</span></div>
       <div class="col">Total: <span class="total-val">-</span></div>
     </div>
-
     <!-- Volumes -->
     <div class="counts columns-3 row-volumes">
       <div class="col">Plastic Volume: <span class="plastic-text">-</span>%</div>
       <div class="col">Can Volume: <span class="can-text">-</span>%</div>
       <div class="col">Total Volume: <span class="total-text">-</span>%</div>
     </div>
-
     <!-- Bars -->
     <div class="bars">
       <div class="bar-container">
@@ -77,13 +74,11 @@
         <div class="chart-title">Daily Chart</div>
         <canvas id="dailyChart"></canvas>
       </div>
-
       <div class="chart-card">
         <div class="chart-title">Weekly Chart</div>
         <canvas id="weeklyChart"></canvas>
       </div>
     </div>
-
     <!-- RIGHT COLUMN -->
     <div class="right-column">
       <div class="table-card">
@@ -98,7 +93,6 @@
           </thead>
           <tbody id="historyTable"></tbody>
         </table>
-
         <div class="history-nav">
           <button id="prevWeekBtn" class="history-btn">⬅ Previous</button>
           <button id="nextWeekBtn" class="history-btn">Next ➡</button>
@@ -107,16 +101,12 @@
     </div>
   </div>
 </div>
-
 <script>
 const API_URL = "https://rvm.iffatadibamusaffa.workers.dev";
 const SHEET_API = "https://script.google.com/macros/s/AKfycbwWp4pB_94dkI62JVTzkMlQVBMVoV-tTcNYcjexaWc7jeuTL6n4PYeXHurkKeHjCOpHuA/exec";
-const DEPLOYED_DEVICE_COUNT = 10;
 const FETCH_INTERVAL_MS = 5000;         // ngambil data setiap 5 detik
 const NOTIFY_INTERVAL = 60 * 60 * 1000; // notif setiap 1 hour
-
-function pctClamp(v){ v=Math.round(v); return isNaN(v)?0:Math.max(0,Math.min(100,v)); }
-
+function pctClamp(v){ v=Math.round(v); return isNaN(v)?0:Math.max(0,Math.min(100,v));}
 // Notifications enable/disable function
 let lastNotifiedLevels = {};
 function shouldNotify(key, level){
@@ -161,44 +151,25 @@ function formatLastSeen(ts){
 }
 
 // Generate cards
-function generateCards(count){
-  const dashboard=document.getElementById('dashboard');
-  const template=dashboard.querySelector('[data-template="true"]');
-  
-  for(let i=1;i<=count;i++){
-    const clone = (i===1) ? template : template.cloneNode(true);
-    clone.setAttribute('data-rvm',i);
-    clone.querySelector('.rvm-title').innerText = `RVM ${i}`;
-    clone.querySelector('.rvm-location').innerText = '-';
+function generateCardsFromDevices(devices){
+  const dashboard = document.getElementById('dashboard');
+  const template = dashboard.querySelector('[data-template="true"]');
+  dashboard.innerHTML = '';
+  devices.forEach((device, index)=>{
+    const clone = template.cloneNode(true);
+    const rvmId = device.device_id.replace(/RVM/i,'');
+    clone.setAttribute('data-rvm', rvmId);
+    clone.querySelector('.rvm-title').innerText = device.device_id;
+    clone.querySelector('.rvm-location').innerText = device.location || '-';
     clone.querySelector('.status-dot').classList.remove('online','offline');
-    clone.querySelector('.status-dot').classList.add('offline');
-    clone.querySelector('.status-text').innerText='Offline';
-    clone.querySelector('.rvm-uptime').innerText='Uptime: -';
-    clone.querySelector('.rvm-lastseen').innerText='Last seen: -';
-    
-    // Reset counts
-    clone.querySelector('.plastic-val').innerText='-';
-    clone.querySelector('.can-val').innerText='-';
-    clone.querySelector('.total-val').innerText='-';
-
-    // Reset volume text
-    clone.querySelector('.plastic-text').innerText='-';
-    clone.querySelector('.can-text').innerText='-';
-    clone.querySelector('.total-text').innerText='-';
-
-    // Reset bars
-    clone.querySelector('.fill-plastic-bar').style.height='0%';
-    clone.querySelector('.fill-can-bar').style.height='0%';
-    clone.querySelector('.fill-total-bar').style.height='0%';
-
-    clone.querySelector('.history-btn').setAttribute('data-rvm',i);
-
-    if(i!==1) dashboard.appendChild(clone);
-  }
-
-  template.removeAttribute('data-template'); // only needed once
+    clone.querySelector('.status-dot').classList.add(device.status==="online" ? "online":"offline");
+    clone.querySelector('.status-text').innerText = device.status==="online" ? "Online":"Offline";
+    clone.querySelector('.rvm-uptime').innerText = "Uptime: " + formatUptime(device.uptime);
+    clone.querySelector('.rvm-lastseen').innerText = "Last seen: " + formatLastSeen(device.lastSeen);
+    clone.querySelector('.history-btn').setAttribute('data-rvm', rvmId);
+    dashboard.appendChild(clone);
+  });
 }
-
 
 // Update card values
 function updateCardFromValues(cardEl, values){
@@ -206,37 +177,29 @@ function updateCardFromValues(cardEl, values){
   const plasticEl = cardEl.querySelector('.plastic-val');
   const canEl = cardEl.querySelector('.can-val');
   const totalEl = cardEl.querySelector('.total-val');
-
   const fillPlastic = cardEl.querySelector('.fill-plastic-bar');
   const fillCan = cardEl.querySelector('.fill-can-bar');
   const fillTotal = cardEl.querySelector('.fill-total-bar');
-
   const plasticText = cardEl.querySelector('.plastic-text');
   const canText = cardEl.querySelector('.can-text');
   const totalText = cardEl.querySelector('.total-text');
-
   // Values
   const plastic = Number(values.plastic) || 0;
   const can = Number(values.can) || 0;
-
   // Use pctClamp to ensure 0-100%
   const pPct = pctClamp(Number(values.pPct));
   const cPct = pctClamp(Number(values.cPct));
-
   // Total values
   const total = plastic + can;
   const totalPct = pctClamp(Math.round((pPct + cPct)/2)); // average of two
-
   // Update counts
   plasticEl.innerText = plastic;
   canEl.innerText = can;
   totalEl.innerText = total;
-
   // Update bars
   fillPlastic.style.height = pPct + '%';
   fillCan.style.height = cPct + '%';
   fillTotal.style.height = totalPct + '%';
-
   // Update text above bars
   plasticText.innerText = pPct;
   canText.innerText = cPct;
@@ -249,17 +212,16 @@ let isFetchingCounts=false;
 async function fetchCounts(){
   if(isFetchingCounts) return;
   isFetchingCounts=true;
-
   try {
     const resp = await fetch(API_URL, { cache: "no-store" });
     if (!resp.ok) throw new Error(resp.status);
     const data = await resp.json(); // now an array of objects
-
+    // create cards automatically if needed
+    if(document.querySelectorAll('.card').length !== data.length){generateCardsFromDevices(data);}
     data.forEach(device => {
       const rvmId = device.device_id.replace(/RVM/i,''); // extract number
       const card = document.querySelector(`.card[data-rvm="${rvmId}"]`);
       if(!card) return;
-
       const statusDot = card.querySelector('.status-dot');
       const statusText = card.querySelector('.status-text');
       const uptimeEl = card.querySelector('.rvm-uptime');
@@ -282,9 +244,7 @@ async function fetchCounts(){
       };
       updateCardFromValues(card, values);
       const locationEl = card.querySelector('.rvm-location');
-      if (locationEl) {
-        locationEl.innerText = device.location || '-';
-      }
+      if (locationEl) {locationEl.innerText = device.location || '-';}
       // Notification sends function
       ['plastic', 'can'].forEach(type => {const pct = Math.round(pctClamp(values[type === 'plastic' ? 'pPct' : 'cPct']));
       const key = `rvm${rvmId}-${type}`;
@@ -298,9 +258,7 @@ async function fetchCounts(){
       } else {localStorage.removeItem(storageKey);} // reset when below threshold
     });
     });
-  } catch(err){
-    console.error("Error fetching counts:", err);
-  }
+  } catch(err){console.error("Error fetching counts:", err);}
   isFetchingCounts=false;
 }
 function startAutoFetch(){ if(fetchIntervalId) clearInterval(fetchIntervalId); fetchCounts().catch(console.error); fetchIntervalId=setInterval(fetchCounts,FETCH_INTERVAL_MS);}
@@ -320,7 +278,6 @@ function renderWeek(){
   const totalDaily=weekData.map(r=>Number(r.plastic+r.can||0));
   const totals=plasticSeries.map((p,i)=>p+(canSeries[i]||0));
   const weeklyTotal=totals.reduce((s,v)=>s+v,0);
-
   destroyCharts();
   dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
     type:'line',
@@ -332,10 +289,8 @@ function renderWeek(){
     data:{ labels:['Plastic','Can','Total'], datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],borderRadius:6,backgroundColor: ['#3b82f6','#f59e0b','#10b981']}]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
   });
-
   const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
   weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
-
   document.getElementById('nextWeekBtn').disabled=((start+7)>=historyData.length);
   document.getElementById('prevWeekBtn').disabled=(weekIndex===0);
 }
@@ -360,13 +315,10 @@ async function showHistory(rvmId){
 }
 
 function closeHistory(){document.getElementById('backdrop').style.display='none'; const hist=document.getElementById('historyContainer'); hist.style.display='none'; hist.setAttribute('aria-hidden','true'); destroyCharts();}
-
 document.addEventListener('click',function(e){const btn=e.target.closest('.history-btn'); if(btn){const rvm=Number(btn.getAttribute('data-rvm'))||Number(btn.closest('.card').getAttribute('data-rvm')); if(rvm) showHistory(rvm);}});
 document.getElementById('closeHistory').addEventListener('click',closeHistory);
 document.getElementById('backdrop').addEventListener('click',closeHistory);
-
 window.addEventListener('DOMContentLoaded',()=>{
-  generateCards(DEPLOYED_DEVICE_COUNT);
   startAutoFetch();
 });
 document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch():startAutoFetch();});
@@ -374,4 +326,3 @@ document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch(
 
 </body>
 </html>
-
