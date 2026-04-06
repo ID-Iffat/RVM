@@ -30,30 +30,26 @@
       <div class="rvm-lastseen">Last seen: -</div>
     </div>
     <!-- Counts -->
+    <div class="section-title">Trash Counts :</div>
     <div class="counts columns-3 row-counts">
       <div class="col">Plastic: <span class="plastic-val">-</span></div>
       <div class="col">Can: <span class="can-val">-</span></div>
       <div class="col">Total: <span class="total-val">-</span></div>
     </div>
-    <!-- Volumes -->
-    <div class="counts columns-3 row-volumes">
-      <div class="col">Plastic Volume: <span class="plastic-text">-</span>%</div>
-      <div class="col">Can Volume: <span class="can-text">-</span>%</div>
-      <div class="col">Total Volume: <span class="total-text">-</span>%</div>
-    </div>
     <!-- Bars -->
+    <div class="section-title">Trashcan Volume :</div>
     <div class="bars">
       <div class="bar-container">
         <div class="bar"><div class="fill-plastic-bar" style="height:0%"></div></div>
-        <div class="label">Plastic</div>
+        <div class="label">Plastic (<span class="plastic-text">-</span>%)</div>
       </div>
       <div class="bar-container">
         <div class="bar"><div class="fill-can-bar" style="height:0%"></div></div>
-        <div class="label">Can</div>
+        <div class="label">Can (<span class="can-text">-</span>%)</div>
       </div>
       <div class="bar-container">
         <div class="bar"><div class="fill-total-bar" style="height:0%"></div></div>
-        <div class="label">Total</div>
+        <div class="label">Total (<span class="total-text">-</span>%)</div>
       </div>
     </div>
     <button class="history-btn" data-rvm="1">History</button>
@@ -159,7 +155,8 @@ function generateCardsFromDevices(devices){
     const clone = template.cloneNode(true);
     const rvmId = device.device_id.replace(/RVM/i,'');
     clone.setAttribute('data-rvm', rvmId);
-    clone.querySelector('.rvm-title').innerText = device.device_id;
+    const formattedId = device.device_id.replace(/(RVM)(\d+)/i, '$1 $2');
+    clone.querySelector('.rvm-title').innerText = formattedId;
     clone.querySelector('.rvm-location').innerText = device.location || '-';
     clone.querySelector('.status-dot').classList.remove('online','offline');
     clone.querySelector('.status-dot').classList.add(device.status==="online" ? "online":"offline");
@@ -169,6 +166,7 @@ function generateCardsFromDevices(devices){
     clone.querySelector('.history-btn').setAttribute('data-rvm', rvmId);
     dashboard.appendChild(clone);
   });
+  
 }
 
 // Update card values
@@ -282,12 +280,12 @@ function renderWeek(){
   dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
     type:'line',
     data:{ labels, datasets:[{label:'Plastic',data:plasticSeries,stack:'stack1',borderColor:'#3b82f6',backgroundColor:'#3b82f6'},{label:'Can',data:canSeries,stack:'stack2',borderColor:'#f59e0b',backgroundColor:'#f59e0b'},{label:'Total',data:totalDaily,stack:'stack3',borderColor:'#10b981',backgroundColor:'#10b981'}]},
-    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,min:0,max:200,ticks:{stepSize:20,precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
   });
   weeklyChartInstance=new Chart(document.getElementById('weeklyChart').getContext('2d'),{
     type:'bar',
     data:{ labels:['Plastic','Can','Total'], datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],borderRadius:6,backgroundColor: ['#3b82f6','#f59e0b','#10b981']}]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:2000,ticks:{stepSize:200,precision:0}}} }
   });
   const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
   weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
