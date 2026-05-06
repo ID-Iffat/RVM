@@ -70,11 +70,26 @@
     <!-- LEFT COLUMN -->
     <div class="left-column">
       <div class="chart-card">
-        <div class="chart-title">Daily Chart</div>
+        <div class="chart-title">
+          Daily Chart | Short by
+          <select id="dailyScale">
+            <option value="500" selected>500</option>
+            <option value="1000">1000</option>
+            <option value="5000">5000</option>
+          </select>
+        </div>
         <canvas id="dailyChart"></canvas>
       </div>
+
       <div class="chart-card">
-        <div class="chart-title">Weekly Chart</div>
+        <div class="chart-title">
+          Weekly Chart | Short by
+          <select id="weeklyScale">
+            <option value="5000" selected>5000</option>
+            <option value="10000">10000</option>
+            <option value="50000">50000</option>
+          </select>
+        </div>
         <canvas id="weeklyChart"></canvas>
       </div>
     </div>
@@ -266,7 +281,7 @@ function startAutoFetch(){ if(fetchIntervalId) clearInterval(fetchIntervalId); f
 function stopAutoFetch(){ if(fetchIntervalId) clearInterval(fetchIntervalId); fetchIntervalId=null;}
 
 // History & Charts
-let historyData=[], weekIndex=0, dailyChartInstance=null, weeklyChartInstance=null;
+let historyData=[], weekIndex=0, dailyChartInstance=null, weeklyChartInstance=null, dailyMax = 1000, weeklyMax = 10000;
 function fmtDate(rowDate){ if(typeof rowDate==='string'){if(rowDate.includes('T')) return rowDate.split('T')[0]; return rowDate;} return String(rowDate);}
 function destroyCharts(){if(dailyChartInstance){try{dailyChartInstance.destroy();}catch(e){} dailyChartInstance=null;} if(weeklyChartInstance){try{weeklyChartInstance.destroy();}catch(e){} weeklyChartInstance=null;}}
 function renderWeek(){
@@ -283,12 +298,12 @@ function renderWeek(){
   dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
     type:'line',
     data:{ labels, datasets:[{label:'Plastic',data:plasticSeries,stack:'stack1',borderColor:'#3b82f6',backgroundColor:'#3b82f6'},{label:'Can',data:canSeries,stack:'stack2',borderColor:'#f59e0b',backgroundColor:'#f59e0b'},{label:'Total',data:totalDaily,stack:'stack3',borderColor:'#10b981',backgroundColor:'#10b981'}]},
-    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,min:0,max:200,ticks:{stepSize:20,precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{},y:{min:0,max:dailyMax,ticks:{stepSize:dailyMax/10,precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
   });
   weeklyChartInstance=new Chart(document.getElementById('weeklyChart').getContext('2d'),{
     type:'bar',
     data:{ labels:['Plastic','Can','Total'], datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],borderRadius:6,backgroundColor: ['#3b82f6','#f59e0b','#10b981']}]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:2000,ticks:{stepSize:200,precision:0}}} }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:weeklyMax,ticks:{stepSize:weeklyMax/10,precision:0}}} }
   });
   const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
   weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
@@ -321,6 +336,15 @@ document.getElementById('closeHistory').addEventListener('click',closeHistory);
 document.getElementById('backdrop').addEventListener('click',closeHistory);
 window.addEventListener('DOMContentLoaded',()=>{
   startAutoFetch();
+});
+document.getElementById("dailyScale").addEventListener("change", (e)=>{
+  dailyMax = Number(e.target.value);
+  renderWeek();
+});
+
+document.getElementById("weeklyScale").addEventListener("change", (e)=>{
+  weeklyMax = Number(e.target.value);
+  renderWeek();
 });
 document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch():startAutoFetch();});
 </script>
