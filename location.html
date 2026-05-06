@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RVM Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+</head>
+<body>
+
+<header>
+  <h1>RVM Dashboard</h1>
+  <div class="header-buttons">
+    <button class="enable-notif" onclick="window.location.href='index.html'">View by Devices</button>
+  </div>
+</header>
+
+<main id="dashboard"></main>
+
+<!-- HISTORY -->
+<div id="backdrop"></div>
+
+<div id="historyContainer">
+  <div id="historyHeader">
+    <h2>History for <span id="historyTitle">-</span></h2>
+    <button id="closeHistory">Close</button>
+  </div>
+
+  <div id="historyBody">
+    
+    <!-- LEFT (CHARTS) -->
+    <div class="left-column">
+      <div class="chart-card">
+        <div class="chart-title">Daily Chart</div>
+        <canvas id="dailyChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Weekly Chart</div>
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT (TABLE) -->
+    <div class="table-card">
+    <div class="location-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Plastic</th>
+            <th>Can</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+      </table>
+    </div>
+
+    <div class="history-nav">
+      <button id="prevWeekBtn" class="history-btn">⬅ Previous</button>
+      <button id="nextWeekBtn" class="history-btn">Next ➡</button>
+    </div>
+
+  </div>
+
+    </div>
+  </div>
+
+<script>
+const API_URL = "https://rvm.iffatadibamusaffa.workers.dev";
+const SHEET_API = "https://script.google.com/macros/s/AKfycbwWp4pB_94dkI62JVTzkMlQVBMVoV-tTcNYcjexaWc7jeuTL6n4PYeXHurkKeHjCOpHuA/exec";
+const FETCH_INTERVAL_MS = 5000;
+
+// ===== STATE =====
+let historyData = [];
+let weekIndex = 0;
+let dailyChart = null;
+let weeklyChart = null;
+
+// ===== HELPERS =====
+function pctClamp(v){
+  v = Math.round(v);
+  return isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
+}
+
+// ===== GROUP LOCATION =====
+function groupByLocation(devices){
+  const map = {};
+
+  devices.forEach(d => {
+    if(!d.location) return;
+
+    const [loc] = d.location.split('/');
+
+    if(!map[loc]){
+      map[loc] = { location: loc, plastic:0, can:0, count:0 };
+    }
+
+    map[loc].plastic += Number(d.plastic||0);
+    map[loc].can += Number(d.can||0);
+    map[loc].count++;
+  });
+
+  return Object.values(map).map(l=>({
+    location:l.location,
+    plastic:l.plastic,
+    can:l.can,
+    total:l.plastic+l.can,
+    count:l.count
+  }));
+}
+
+// ===== RENDER CARDS =====
+function renderLocations(locations){
+  const dash = document.getElementById("dashboard");
+  dash.innerHTML = "";
+
+  locations.forEach(loc=>{
+    const card = document.createElement("section");
+    card.className="card";
+
+    card.innerHTML=`
+      <h2>
+        <span>${loc.location}</span>
+        <span class="rvm-location">${loc.count} devices</span>
+      </h2>
+
+      <div class="counts columns-3">
+        <div class="col">Plastic: ${loc.plastic}</div>
+        <div class="col">Can: ${loc.can}</div>
+        <div class="col">Total: ${loc.total}</div>
+      </div>
+
+      <button class="history-btn" data-location="${loc.location}">
+        History
+      </button>
+    `;
+
+    dash.appendChild(card);
+  });
+}
+
+// ===== HISTORY FETCH =====
+async function showLocationHistory(location){
+
+  document.getElementById("backdrop").style.display="block";
+  document.getElementById("historyContainer").style.display="block";
+  document.getElementById("historyTitle").innerText = location;
+
+  try{
+    const devices = await (await fetch(API_URL)).json();
+    const ids = devices
+      .filter(d=>d.location && d.location.startsWith(location+"/"))
+      .map(d=>d.device_id);
+
+    const raw = await (await fetch(SHEET_API)).json();
+
+    const filtered = raw.filter(r=>ids.includes(r.device_id));
+
+    const grouped = {};
+
+    filtered.forEach(r=>{
+      const k = r.timestamp;
+
+      if(!grouped[k]){
+        grouped[k]={timestamp:k, plastic:0, can:0, devices:{}};
+      }
+
+      const p = Number(r.plastic||0);
+      const c = Number(r.can||0);
+
+      grouped[k].plastic+=p;
+      grouped[k].can+=c;
+      grouped[k].devices[r.device_id]={plastic:p, can:c};
+    });
+
+    historyData = Object.values(grouped)
+      .sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+
+    weekIndex=0;
+    renderWeek();
+
+  }catch(e){
+    console.error(e);
+  }
+}
+
+// ===== RENDER WEEK =====
+function renderWeek(){
+
+  const start = weekIndex*7;
+  const slice = historyData.slice(start, start+7);
+
+  const table = document.getElementById("historyTable");
+  table.innerHTML="";
+
+  if(!slice.length){
+    table.innerHTML="<tr><td colspan=4>No data</td></tr>";
+    return;
+  }
+
+  const labels = [];
+  const plasticSeries = [];
+  const canSeries = [];
+
+  slice.forEach(row=>{
+    const total = row.plastic + row.can;
+
+    labels.push(row.timestamp);
+    plasticSeries.push(row.plastic);
+    canSeries.push(row.can);
+
+    // TOTAL ROW
+    table.innerHTML += `
+      <tr style="background:#1f2937;font-weight:bold;">
+        <td>${row.timestamp}</td>
+        <td>${row.plastic}</td>
+        <td>${row.can}</td>
+        <td>${total}</td>
+      </tr>
+    `;
+
+    // DEVICES
+    Object.entries(row.devices).forEach(([dev,val])=>{
+      const t = val.plastic + val.can;
+
+      table.innerHTML += `
+        <tr style="opacity:.8">
+          <td style="padding-left:20px;">↳ ${dev}</td>
+          <td>${val.plastic}</td>
+          <td>${val.can}</td>
+          <td>${t}</td>
+        </tr>
+      `;
+    });
+  });
+
+  // ===== CHART FIX FINAL =====
+  if(dailyChart) dailyChart.destroy();
+  if(weeklyChart) weeklyChart.destroy();
+
+  const totalSeries = plasticSeries.map((p,i)=>p+(canSeries[i]||0));
+
+  // DAILY CHART (STRAIGHT LINE + FIXED AXIS)
+  dailyChart = new Chart(document.getElementById("dailyChart"),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {
+          label:'Plastic',
+          data:plasticSeries,
+          borderColor:'#3b82f6',
+          backgroundColor:'#3b82f6',
+          tension:0   // ← FIX: no spline
+        },
+        {
+          label:'Can',
+          data:canSeries,
+          borderColor:'#f59e0b',
+          backgroundColor:'#f59e0b',
+          tension:0
+        },
+        {
+          label:'Total',
+          data:totalSeries,
+          borderColor:'#10b981',
+          backgroundColor:'#10b981',
+          tension:0
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top'}
+      },
+      scales:{
+        y:{
+          min:0,
+          max:1000,
+          ticks:{
+            stepSize:100,
+            precision:0
+          }
+        }
+      }
+    }
+  });
+
+  // WEEKLY CHART (NO LEGEND)
+  const sumP = plasticSeries.reduce((a,b)=>a+b,0);
+  const sumC = canSeries.reduce((a,b)=>a+b,0);
+
+  weeklyChart = new Chart(document.getElementById("weeklyChart"),{
+    type:'bar',
+    data:{
+      labels:['Plastic','Can','Total'],
+      datasets:[{
+        data:[sumP, sumC, sumP+sumC],
+        backgroundColor:['#3b82f6','#f59e0b','#10b981']
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false}  // ← REMOVE LEGEND
+      },
+      scales:{
+        y:{
+          min:0,
+          max:1000,
+          ticks:{
+            stepSize:100,
+            precision:0
+          }
+        }
+      }
+    }
+  });
+}
+
+// ===== NAV =====
+document.getElementById("prevWeekBtn").onclick=()=>{
+  if(weekIndex>0){ weekIndex--; renderWeek(); }
+};
+
+document.getElementById("nextWeekBtn").onclick=()=>{
+  if((weekIndex+1)*7 < historyData.length){
+    weekIndex++; renderWeek();
+  }
+};
+
+// ===== CLOSE =====
+document.getElementById("closeHistory").onclick=()=>{
+  historyContainer.style.display="none";
+  backdrop.style.display="none";
+};
+
+document.getElementById("backdrop").onclick=()=>{
+  historyContainer.style.display="none";
+  backdrop.style.display="none";
+};
+
+// ===== CLICK =====
+document.addEventListener("click",e=>{
+  const btn = e.target.closest(".history-btn");
+  if(!btn) return;
+
+  const loc = btn.getAttribute("data-location");
+  if(loc) showLocationHistory(loc);
+});
+
+// ===== FETCH LOOP =====
+async function fetchData(){
+  const devices = await (await fetch(API_URL)).json();
+  renderLocations(groupByLocation(devices));
+}
+
+setInterval(fetchData, FETCH_INTERVAL_MS);
+fetchData();
+
+</script>
+
+</body>
+</html>
