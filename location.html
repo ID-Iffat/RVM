@@ -34,11 +34,26 @@
     <!-- LEFT (CHARTS) -->
     <div class="left-column">
       <div class="chart-card">
-        <div class="chart-title">Daily Chart</div>
+        <div class="chart-title">
+          Daily Chart | Short by
+          <select id="dailyScale">
+            <option value="500" selected>500</option>
+            <option value="1000">1000</option>
+            <option value="5000">5000</option>
+          </select>
+        </div>
         <canvas id="dailyChart"></canvas>
       </div>
+
       <div class="chart-card">
-        <div class="chart-title">Weekly Chart</div>
+        <div class="chart-title">
+          Weekly Chart | Short by
+          <select id="weeklyScale">
+            <option value="1000" selected>1000</option>
+            <option value="5000">5000</option>
+            <option value="10000">10000</option>
+          </select>
+        </div>
         <canvas id="weeklyChart"></canvas>
       </div>
     </div>
@@ -79,6 +94,8 @@ let historyData = [];
 let weekIndex = 0;
 let dailyChart = null;
 let weeklyChart = null;
+let dailyMax = 1000;
+let weeklyMax = 10000;
 
 // ===== HELPERS =====
 function pctClamp(v){
@@ -283,9 +300,9 @@ function renderWeek(){
       scales:{
         y:{
           min:0,
-          max:1000,
+          max: dailyMax,
           ticks:{
-            stepSize:100,
+            stepSize: dailyMax / 10,
             precision:0
           }
         }
@@ -315,9 +332,9 @@ function renderWeek(){
       scales:{
         y:{
           min:0,
-          max:1000,
+          max: weeklyMax,
           ticks:{
-            stepSize:100,
+            stepSize: weeklyMax / 10,
             precision:0
           }
         }
@@ -355,6 +372,16 @@ document.addEventListener("click",e=>{
 
   const loc = btn.getAttribute("data-location");
   if(loc) showLocationHistory(loc);
+});
+
+document.getElementById("dailyScale").addEventListener("change", (e)=>{
+  dailyMax = Number(e.target.value);
+  renderWeek();
+});
+
+document.getElementById("weeklyScale").addEventListener("change", (e)=>{
+  weeklyMax = Number(e.target.value);
+  renderWeek();
 });
 
 // ===== FETCH LOOP =====
