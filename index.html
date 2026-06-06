@@ -132,6 +132,23 @@ document.getElementById('notifBtn').addEventListener('click', async () => {
   }
 });
 
+const notifBtn = document.getElementById("notifBtn");
+function updateNotifButton() {
+  const enabled = localStorage.getItem("notificationsEnabled") === "true";
+  notifBtn.textContent = enabled ? "Disable Notifications" : "Enable Notifications";
+}
+updateNotifButton();
+notifBtn.addEventListener("click", async () => {
+  const enabled = localStorage.getItem("notificationsEnabled") === "true";
+  try {
+    if (enabled) {await window.disableFCM();} 
+    else {await window.enableFCM();}
+    updateNotifButton();
+  } catch (err) {
+    console.error(err);
+  }
+});
+  
 function formatUptime(sec){
   sec = Number(sec)||0;
   const d = Math.floor(sec/86400);
@@ -332,6 +349,7 @@ document.getElementById('backdrop').addEventListener('click',closeHistory);
 window.addEventListener('DOMContentLoaded',()=>{
   startAutoFetch();
 });
+  
 document.getElementById("dailyScale").addEventListener("change", (e)=>{
   dailyMax = Number(e.target.value);
   renderWeek();
