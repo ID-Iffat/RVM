@@ -369,20 +369,16 @@ async function showHistory(rvmId){
   }catch(err){console.error("History fetch error:",err); tableBody.innerHTML='<tr><td colspan="4">Error loading history.</td></tr>'; destroyCharts();}
 }
 
-function updateNotifButton(){
-  const btn =
-    document.getElementById("notifBtn");
+function updateNotifButton() {
+  const btn = document.getElementById("notifBtn");
   const enabled =
-    localStorage.getItem("fcmEnabled")
-    === "true";
-  if(enabled){
-    btn.textContent =
-      "Notifications ON";
+    localStorage.getItem("notificationsEnabled") === "true";
+  if (enabled) {
+    btn.textContent = "Notifications ON";
     btn.classList.remove("disabled");
     btn.classList.add("enabled");
-  }else{
-    btn.textContent =
-      "Notifications OFF";
+  } else {
+    btn.textContent = "Notifications OFF";
     btn.classList.remove("enabled");
     btn.classList.add("disabled");
   }
@@ -393,12 +389,18 @@ window.addEventListener("DOMContentLoaded", async () => {
   updateNotifButton();
   document.getElementById("notifBtn")
     .addEventListener("click", async () => {
-      if (localStorage.getItem("fcmEnabled") === "true") {
+      const enabled =
+        localStorage.getItem("notificationsEnabled") === "true";
+      if (enabled) {
         await window.disableFCM();
-        localStorage.setItem("fcmEnabled", "false");
       } else {
         const token = await window.enableFCM();
-        if (token) {localStorage.setItem("fcmEnabled", "true");}
+        if (token) {
+          localStorage.setItem(
+            "notificationsEnabled",
+            "true"
+          );
+        }
       }
       updateNotifButton();
     });
