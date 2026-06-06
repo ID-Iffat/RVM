@@ -11,6 +11,16 @@ const firebaseConfig = {
   measurementId: "G-2PN1X98GQ3"
 };
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/RVM/firebase-messaging-sw.js")
+    .then(reg => {
+      console.log("SW registered:", reg.scope);
+    })
+    .catch(err => {
+      console.error("SW registration failed:", err);
+    });
+}
+
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
