@@ -15,118 +15,46 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 window.enableFCM = async function () {
-  try {
-    const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      alert("Notification permission denied");
-      return;
-    }
-
-    const registration = await navigator.serviceWorker.ready;
-    console.log("SW registration:", registration);
-    console.log("Messaging object:", messaging);
-    console.log("Registration:", registration);
-    console.log("Permission:", Notification.permission);
-    const token = await getToken(messaging, {
-      vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
-      serviceWorkerRegistration: registration
-    });
-
-    if (!token) {
-      alert("Failed to get FCM token");
-      return;
-    }
-
-    localStorage.setItem("fcmToken", token);
-    localStorage.setItem("notificationsEnabled", "true");
-
-    await fetch(
-      "https://rvm.iffatadibamusaffa.workers.dev/register-token",
-      {
-        method: "POST",
-        body: token
-      }
-    );
-
-    console.log("FCM TOKEN:", token);
-    console.log("Token Sent");
-
-    return token;
-
-  } catch (err) {
-    console.error("FCM ERROR:", err);
-    alert(err.message);
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {alert("Notification permission denied");
     return;
   }
+  const registration = await navigator.serviceWorker.ready;
+  const token = await getToken(messaging, {
+    vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
+    serviceWorkerRegistration: registration
+  });
+  if (!token) {alert("Failed to get FCM token");
+    return;
+  }
+  
+  localStorage.setItem("fcmToken", token);
+  localStorage.setItem("notificationsEnabled", "true");
+  await fetch("https://rvm.iffatadibamusaffa.workers.dev/register-token", {
+      method: "POST",
+      body: token
+    }
+  );
+
+  console.log("FCM TOKEN:", token);
+  console.log("Token Sent");
+  return token;
 };
 
-// window.enableFCM = async function () {
-//   const permission = await Notification.requestPermission();
-//   if (permission !== "granted") {alert("Notification permission denied");
-//     return;
-//   }
-//   const registration = await navigator.serviceWorker.ready;
-//   console.log("SW registration:", registration);
-//   const token = await getToken(messaging, {
-//     vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
-//     serviceWorkerRegistration: registration
-//   } catch (err) {
-//     console.error("FCM ERROR:", err);
-//     alert(err.message);
-//     return;
-//   );
-//   if (!token) {alert("Failed to get FCM token");
-//     return;
-//   }
-  
-//   localStorage.setItem("fcmToken", token);
-//   localStorage.setItem("notificationsEnabled", "true");
-//   await fetch("https://rvm.iffatadibamusaffa.workers.dev/register-token", {
-//       method: "POST",
-//       body: token
-//     }
-//   );
-
-//   console.log("FCM TOKEN:", token);
-//   console.log("Token Sent");
-//   return token;
-// };
-
-window.disableFCM = async function () {
-  const token = localStorage.getItem("fcmToken");
-  try {
-    if (token) {
-      await fetch(
-        "https://rvm.iffatadibamusaffa.workers.dev/unregister-token",
-        {
-          method: "POST",
-          body: token
-        }
-      );
-    }
-  } catch (e) {
-    console.error(e);
+window.disableFCM = async function () {const token = localStorage.getItem("fcmToken");
+  if (!token) {localStorage.setItem("notificationsEnabled", "false");
+    return;
   }
+  await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
+      method: "POST",
+      body: token
+    }
+  );
+  await deleteToken(messaging);
   localStorage.removeItem("fcmToken");
   localStorage.setItem("notificationsEnabled", "false");
   console.log("FCM disabled");
 };
-
-// window.disableFCM = async function () {const token = localStorage.getItem("fcmToken");
-//   if (!token) {localStorage.setItem("notificationsEnabled", "false");
-//     return;
-//   }
-//   await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
-//       method: "POST",
-//       body: token
-//     }
-//   );
-//   await deleteToken(messaging);
-//   localStorage.removeItem("fcmToken");
-//   localStorage.setItem("notificationsEnabled", "false");
-//   console.log("FCM disabled");
-// };
 
 onMessage(messaging, (payload) => {
   console.log("Foreground Message:", payload);
