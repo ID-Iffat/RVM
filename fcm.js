@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import {getMessaging, getToken, onMessage} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-messaging.js";
 import {getMessaging, getToken, deleteToken, onMessage} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-messaging.js";
 
 const firebaseConfig = {
