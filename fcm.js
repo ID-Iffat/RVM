@@ -41,20 +41,40 @@ window.enableFCM = async function () {
   return token;
 };
 
-window.disableFCM = async function () {const token = localStorage.getItem("fcmToken");
-  if (!token) {localStorage.setItem("notificationsEnabled", "false");
-    return;
-  }
-  await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
-      method: "POST",
-      body: token
+window.disableFCM = async function () {
+  const token = localStorage.getItem("fcmToken");
+  try {
+    if (token) {
+      await fetch(
+        "https://rvm.iffatadibamusaffa.workers.dev/unregister-token",
+        {
+          method: "POST",
+          body: token
+        }
+      );
     }
-  );
-  await deleteToken(messaging);
+  } catch (e) {
+    console.error(e);
+  }
   localStorage.removeItem("fcmToken");
   localStorage.setItem("notificationsEnabled", "false");
   console.log("FCM disabled");
 };
+
+// window.disableFCM = async function () {const token = localStorage.getItem("fcmToken");
+//   if (!token) {localStorage.setItem("notificationsEnabled", "false");
+//     return;
+//   }
+//   await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
+//       method: "POST",
+//       body: token
+//     }
+//   );
+//   await deleteToken(messaging);
+//   localStorage.removeItem("fcmToken");
+//   localStorage.setItem("notificationsEnabled", "false");
+//   console.log("FCM disabled");
+// };
 
 onMessage(messaging, (payload) => {
   console.log("Foreground Message:", payload);
