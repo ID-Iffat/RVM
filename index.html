@@ -369,12 +369,22 @@ async function showHistory(rvmId){
   }catch(err){console.error("History fetch error:",err); tableBody.innerHTML='<tr><td colspan="4">Error loading history.</td></tr>'; destroyCharts();}
 }
 
-async function updateNotifButton() {
-  const btn = document.getElementById("notifBtn");
-  if (localStorage.getItem("fcmEnabled") === "true") {
-    btn.textContent = "Disable Notifications";
-  } else {
-    btn.textContent = "Enable Notifications";
+function updateNotifButton(){
+  const btn =
+    document.getElementById("notifBtn");
+  const enabled =
+    localStorage.getItem("fcmEnabled")
+    === "true";
+  if(enabled){
+    btn.textContent =
+      "Notifications ON";
+    btn.classList.remove("disabled");
+    btn.classList.add("enabled");
+  }else{
+    btn.textContent =
+      "Notifications OFF";
+    btn.classList.remove("enabled");
+    btn.classList.add("disabled");
   }
 }
 
