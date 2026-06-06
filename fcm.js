@@ -24,7 +24,11 @@ window.enableFCM = async function () {
   const token = await getToken(messaging, {
     vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
     serviceWorkerRegistration: registration
-  });
+  } catch (err) {
+    console.error("FCM ERROR:", err);
+    alert(err.message);
+    return;
+  );
   if (!token) {alert("Failed to get FCM token");
     return;
   }
