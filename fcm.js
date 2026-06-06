@@ -20,6 +20,7 @@ window.enableFCM = async function () {
     return;
   }
   const registration = await navigator.serviceWorker.ready;
+  console.log("SW registration:", registration);
   const token = await getToken(messaging, {
     vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
     serviceWorkerRegistration: registration
