@@ -223,6 +223,11 @@ function updateCardFromValues(cardEl, values){
   totalText.innerText = totalPct;
 }
 
+if ('serviceWorker' in navigator) {navigator.serviceWorker.register('./firebase-messaging-sw.js',{ scope: './' })
+  .then(reg => {console.log('Service Worker registered:',reg.scope);})
+  .catch(err => {console.error('Service Worker registration failed:',err);});
+}
+  
 // Fetch live counts
 let fetchIntervalId=null;
 let isFetchingCounts=false;
