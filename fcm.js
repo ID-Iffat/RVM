@@ -29,7 +29,10 @@ window.enableFCM = async function () {
   if (permission !== "granted") {alert("Notification permission denied");
     return;
   }
-  const registration = await navigator.serviceWorker.ready;
+  // const registration = await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.register(
+    "/RVM/firebase-messaging-sw.js"
+  );
   const token = await getToken(messaging, {
     vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
     serviceWorkerRegistration: registration
