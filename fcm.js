@@ -15,27 +15,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-window.enableFCM = async function () {
-  try {
-    const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      alert("Notification permission denied");
-      return;
-    }
-
-    const token = await getToken(messaging, {
-      vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo"
-    });
-
-    console.log("FCM TOKEN:");
-    console.log(token);
-    alert("FCM enabled. Check browser console.");
-
-  } catch (err) {
-    console.error("FCM ERROR:", err);
-    alert("FCM failed. Check console.");
+window.enableFCM = async function () {const permission = await Notification.requestPermission();
+  if (permission !== "granted") {alert("Notification permission denied");
+    return;
   }
+  const token = await getToken(messaging,{
+      vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo"}
+  );
+  console.log("FCM TOKEN:");
+  console.log(token);
+  alert("FCM token generated.\nCheck browser console.");
+  return token;
 };
 
 onMessage(messaging, (payload) => {
