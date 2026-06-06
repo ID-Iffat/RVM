@@ -26,6 +26,7 @@ window.enableFCM = async function () {const permission = await Notification.requ
   );
   console.log("FCM TOKEN:");
   console.log(token);
+  localStorage.setItem("fcmToken", token);
   alert("FCM token generated.\nCheck browser console.");
   return token;
 };
