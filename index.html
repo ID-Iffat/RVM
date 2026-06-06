@@ -138,9 +138,15 @@ function sendNotification(title, body){
     try{ new Notification(title,{body}); }catch(e){console.warn(e);}
   }
 }
-document.getElementById('notifBtn').addEventListener('click',()=>{
-  if("Notification" in window) Notification.requestPermission().then(p=>alert(p==="granted"?"Notifications enabled!":"Notifications not granted."));
-  else alert("Notifications not supported");
+document.getElementById('notifBtn').addEventListener('click', async () => {
+  try {if (!window.enableFCM) {alert("FCM not loaded");
+      return;
+    }
+    await window.enableFCM();
+  } catch (err) {
+    console.error(err);
+    alert("FCM error");
+  }
 });
 
 function formatUptime(sec){
