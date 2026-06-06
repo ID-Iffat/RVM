@@ -29,8 +29,8 @@ window.enableFCM = async function () {const permission = await Notification.requ
   localStorage.setItem("fcmToken", token);
   await fetch("https://rvm.iffatadibamusaffa.workers.dev/register-token",
     {method: "POST", body: token});
-  
-  console.log("Token sent to Worker");
+  const workerToken = (await response.json()).token;
+  console.log(workerToken);
   alert("FCM token generated.\nCheck browser console.");
   return token;
 };
