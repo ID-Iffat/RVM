@@ -13,7 +13,7 @@
 <header>
   <h1>RVM Dashboard</h1>
   <div class="header-buttons">
-    <button class="enable-notif" id="notifBtn">Enable Notifications</button>
+    <button class="enable-notif" id="notifBtn">Loading...</button>
     <button class="enable-notif" id="locationBtn" onclick="window.location.href='location.html'">View by Location</button>
   </div>
 </header>
@@ -121,34 +121,7 @@ const API_URL = "https://rvm.iffatadibamusaffa.workers.dev";
 const SHEET_API = "https://script.google.com/macros/s/AKfycbwWp4pB_94dkI62JVTzkMlQVBMVoV-tTcNYcjexaWc7jeuTL6n4PYeXHurkKeHjCOpHuA/exec";
 const FETCH_INTERVAL_MS = 5000;         // ngambil data setiap 5 detik
 function pctClamp(v){ v=Math.round(v); return isNaN(v)?0:Math.max(0,Math.min(100,v));}
-document.getElementById('notifBtn').addEventListener('click', async () => {
-  try {if (!window.enableFCM) {alert("FCM not loaded");
-      return;
-    }
-    await window.enableFCM();
-  } catch (err) {
-    console.error(err);
-    alert("FCM error");
-  }
-});
 
-const notifBtn = document.getElementById("notifBtn");
-function updateNotifButton() {
-  const enabled = localStorage.getItem("notificationsEnabled") === "true";
-  notifBtn.textContent = enabled ? "Disable Notifications" : "Enable Notifications";
-}
-updateNotifButton();
-notifBtn.addEventListener("click", async () => {
-  const enabled = localStorage.getItem("notificationsEnabled") === "true";
-  try {
-    if (enabled) {await window.disableFCM();} 
-    else {await window.enableFCM();}
-    updateNotifButton();
-  } catch (err) {
-    console.error(err);
-  }
-});
-  
 function formatUptime(sec){
   sec = Number(sec)||0;
   const d = Math.floor(sec/86400);
@@ -229,11 +202,6 @@ function updateCardFromValues(cardEl, values){
   totalText.innerText = totalPct;
 }
 
-if ('serviceWorker' in navigator) {navigator.serviceWorker.register('./firebase-messaging-sw.js',{ scope: './' })
-  .then(reg => {console.log('Service Worker registered:',reg.scope);})
-  .catch(err => {console.error('Service Worker registration failed:',err);});
-}
-  
 // Fetch live counts
 let fetchIntervalId=null;
 let isFetchingCounts=false;
@@ -243,8 +211,8 @@ async function fetchCounts(){
   try {
     const resp = await fetch(API_URL, { cache: "no-store" });
     if (!resp.ok) throw new Error(resp.status);
-    const data = await resp.json(); // now an array of objects
-    // create cards automatically if needed
+    const data = await resp.json();
+    // create cards automatically
     if(document.querySelectorAll('.card').length !== data.length){generateCardsFromDevices(data);}
     data.forEach(device => {
       const rvmId = device.device_id.replace(/RVM/i,''); // extract number
@@ -273,33 +241,51 @@ async function fetchCounts(){
       updateCardFromValues(card, values);
       const locationEl = card.querySelector('.rvm-location');
       if (locationEl) {locationEl.innerText = device.location || '-';}
-      // Notification sends function
-      // ['plastic', 'can'].forEach(type => {const pct = Math.round(pctClamp(values[type === 'plastic' ? 'pPct' : 'cPct']));
-      const key = `rvm${rvmId}-${type}`;
-      const storageKey = `notify-${key}`;
-      const now = Date.now();
-      if (pct >= 75) {const lastSent = Number(localStorage.getItem(storageKey)) || 0;
-        if (now - lastSent >= NOTIFY_INTERVAL) {
-          sendNotification(
-            `RVM ${rvmId} Volume Alert`,`${type.charAt(0).toUpperCase() + type.slice(1)} Threshold ${pct}% reached`);
-            localStorage.setItem(storageKey, now);}
-      } else {localStorage.removeItem(storageKey);} // reset when below threshold
-    });
     });
   } catch(err){console.error("Error fetching counts:", err);}
   isFetchingCounts=false;
 }
-function startAutoFetch(){ if(fetchIntervalId) clearInterval(fetchIntervalId); fetchCounts().catch(console.error); fetchIntervalId=setInterval(fetchCounts,FETCH_INTERVAL_MS);}
-function stopAutoFetch(){ if(fetchIntervalId) clearInterval(fetchIntervalId); fetchIntervalId=null;}
+function startAutoFetch(){ 
+  if(fetchIntervalId) 
+  clearInterval(fetchIntervalId); 
+  fetchCounts().catch(console.error); 
+  fetchIntervalId=setInterval(fetchCounts,FETCH_INTERVAL_MS);
+}
+function stopAutoFetch(){ 
+  if(fetchIntervalId) 
+  clearInterval(fetchIntervalId); 
+  fetchIntervalId=null;
+}
 
 // History & Charts
 let historyData=[], weekIndex=0, dailyChartInstance=null, weeklyChartInstance=null, dailyMax = 1000, weeklyMax = 10000;
-function fmtDate(rowDate){ if(typeof rowDate==='string'){if(rowDate.includes('T')) return rowDate.split('T')[0]; return rowDate;} return String(rowDate);}
-function destroyCharts(){if(dailyChartInstance){try{dailyChartInstance.destroy();}catch(e){} dailyChartInstance=null;} if(weeklyChartInstance){try{weeklyChartInstance.destroy();}catch(e){} weeklyChartInstance=null;}}
+function fmtDate(rowDate){ 
+  if(typeof rowDate==='string'){
+    if(rowDate.includes('T')) 
+      return rowDate.split('T')[0]; 
+    return rowDate;} 
+  return String(rowDate);}
+
+function destroyCharts(){
+  if(dailyChartInstance){
+    try{dailyChartInstance.destroy();}
+    catch(e){} dailyChartInstance=null;
+  }
+   
+  if(weeklyChartInstance){
+    try{weeklyChartInstance.destroy();}
+    catch(e){} weeklyChartInstance=null;
+  }
+}
+
 function renderWeek(){
   const start=weekIndex*7;
   const weekData=historyData.slice(start,start+7);
-  if(!weekData||weekData.length===0){document.getElementById('historyTable').innerHTML='<tr><td colspan="4">No data</td></tr>'; destroyCharts(); return;}
+  if(!weekData||weekData.length===0){
+    document.getElementById('historyTable').innerHTML='<tr><td colspan="4">No data</td></tr>'; 
+    destroyCharts(); 
+    return;
+  }
   const labels=weekData.map(r=>fmtDate(r.timestamp));
   const plasticSeries=weekData.map(r=>Number(r.plastic||0));
   const canSeries=weekData.map(r=>Number(r.can||0));
@@ -307,32 +293,73 @@ function renderWeek(){
   const totals=plasticSeries.map((p,i)=>p+(canSeries[i]||0));
   const weeklyTotal=totals.reduce((s,v)=>s+v,0);
   destroyCharts();
+
   dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
     type:'line',
-    data:{ labels, datasets:[{label:'Plastic',data:plasticSeries,stack:'stack1',borderColor:'#3b82f6',backgroundColor:'#3b82f6'},{label:'Can',data:canSeries,stack:'stack2',borderColor:'#f59e0b',backgroundColor:'#f59e0b'},{label:'Total',data:totalDaily,stack:'stack3',borderColor:'#10b981',backgroundColor:'#10b981'}]},
-    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'top'}}, scales:{x:{},y:{min:0,max:dailyMax,ticks:{stepSize:dailyMax/10,precision:0}}}, datasets:{bar:{maxBarThickness:48}} }
+    data:{ labels, datasets:[
+      {label:'Plastic',data:plasticSeries,stack:'stack1',borderColor:'#3b82f6',backgroundColor:'#3b82f6'},
+      {label:'Can',data:canSeries,stack:'stack2',borderColor:'#f59e0b',backgroundColor:'#f59e0b'},
+      {label:'Total',data:totalDaily,stack:'stack3',borderColor:'#10b981',backgroundColor:'#10b981'}
+      ]
+    },
+    options:{ 
+      responsive:true, 
+      maintainAspectRatio:false, 
+      interaction:{mode:'index',intersect:false}, 
+      plugins:{legend:{position:'top'}}, 
+      scales:{x:{},y:{min:0,max:dailyMax,ticks:{stepSize:dailyMax/10,precision:0}}}, 
+      datasets:{bar:{maxBarThickness:48}} 
+    }
   });
+
   weeklyChartInstance=new Chart(document.getElementById('weeklyChart').getContext('2d'),{
     type:'bar',
-    data:{ labels:['Plastic','Can','Total'], datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],borderRadius:6,backgroundColor: ['#3b82f6','#f59e0b','#10b981']}]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:weeklyMax,ticks:{stepSize:weeklyMax/10,precision:0}}} }
+    data:{ labels:['Plastic','Can','Total'], 
+    datasets:[{label:'7-day totals',
+               data:[plasticSeries.reduce((a,b)=>a+b,0),
+                     canSeries.reduce((a,b)=>a+b,0),
+                     weeklyTotal
+                    ],
+          borderRadius:6,
+          backgroundColor: ['#3b82f6','#f59e0b','#10b981']
+        }]
+      },
+    options:{ 
+      responsive:true, 
+      maintainAspectRatio:false, 
+      plugins:{legend:{display:false}}, 
+      scales:{y:{min:0,max:weeklyMax,ticks:{stepSize:weeklyMax/10,precision:0}}} 
+    }
   });
+
   const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
-  weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
+  weekData.forEach(row=>{ const p=Number(row.plastic||0), 
+                                c=Number(row.can||0); 
+                                tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}
+                                </td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
   document.getElementById('nextWeekBtn').disabled=((start+7)>=historyData.length);
   document.getElementById('prevWeekBtn').disabled=(weekIndex===0);
 }
 
 async function showHistory(rvmId){
   document.getElementById('backdrop').style.display='block';
-  const hist=document.getElementById('historyContainer'); hist.style.display='block'; hist.setAttribute('aria-hidden','false');
+  const hist=document.getElementById('historyContainer'); 
+        hist.style.display='block'; 
+        hist.setAttribute('aria-hidden','false');
   document.getElementById('historyTitle').innerText=`RVM ${rvmId}`;
-  const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='<tr><td colspan="4">Loading...</td></tr>';
+  const tableBody=document.getElementById('historyTable'); 
+        tableBody.innerHTML='<tr><td colspan="4">Loading...</td></tr>';
   try{
     const response=await fetch(`${SHEET_API}?bin=${encodeURIComponent(rvmId)}`,{cache:"no-store"});
     if(!response.ok) throw new Error(response.status);
     let data=await response.json();
-    if(!Array.isArray(data)){ if(typeof data==='object' && data!==null){ data=Object.keys(data).map(k=>{ const v=data[k]; return {date:k, plastic:v.plastic||v.p, can:v.can||v.c};});} else data=[];}
+    if(!Array.isArray(data)){ 
+      if(typeof data==='object' && data!==null){ 
+        data=Object.keys(data).map(k=>{ const v=data[k]; 
+          return {date:k, plastic:v.plastic||v.p, can:v.can||v.c};});} 
+      else data=[];
+    }
+    
     historyData = data
       .filter(row => row.device_id === `RVM${rvmId}`)
       .sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp));
@@ -342,24 +369,51 @@ async function showHistory(rvmId){
   }catch(err){console.error("History fetch error:",err); tableBody.innerHTML='<tr><td colspan="4">Error loading history.</td></tr>'; destroyCharts();}
 }
 
-function closeHistory(){document.getElementById('backdrop').style.display='none'; const hist=document.getElementById('historyContainer'); hist.style.display='none'; hist.setAttribute('aria-hidden','true'); destroyCharts();}
-document.addEventListener('click',function(e){const btn=e.target.closest('.history-btn'); if(btn){const rvm=Number(btn.getAttribute('data-rvm'))||Number(btn.closest('.card').getAttribute('data-rvm')); if(rvm) showHistory(rvm);}});
-document.getElementById('closeHistory').addEventListener('click',closeHistory);
-document.getElementById('backdrop').addEventListener('click',closeHistory);
-window.addEventListener('DOMContentLoaded',()=>{
+async function updateNotifButton() {
+  const btn = document.getElementById("notifBtn");
+  if (localStorage.getItem("fcmEnabled") === "true") {
+    btn.textContent = "Disable Notifications";
+  } else {
+    btn.textContent = "Enable Notifications";
+  }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
   startAutoFetch();
-});
-  
-document.getElementById("dailyScale").addEventListener("change", (e)=>{
-  dailyMax = Number(e.target.value);
-  renderWeek();
+  updateNotifButton();
+  document.getElementById("notifBtn")
+    .addEventListener("click", async () => {
+      if (localStorage.getItem("fcmEnabled") === "true") {
+        await window.disableFCM();
+        localStorage.setItem("fcmEnabled", "false");
+      } else {
+        const token = await window.enableFCM();
+        if (token) {localStorage.setItem("fcmEnabled", "true");}
+      }
+      updateNotifButton();
+    });
 });
 
-document.getElementById("weeklyScale").addEventListener("change", (e)=>{
-  weeklyMax = Number(e.target.value);
-  renderWeek();
+function closeHistory(){
+  document.getElementById('backdrop').style.display='none'; 
+  const hist=document.getElementById('historyContainer'); 
+        hist.style.display='none'; 
+        hist.setAttribute('aria-hidden','true'); 
+        destroyCharts();
+}
+
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('.history-btn'); 
+  if(btn){const rvm=Number(btn.getAttribute('data-rvm'))||Number(btn.closest('.card').getAttribute('data-rvm')); 
+  if(rvm) showHistory(rvm);}
 });
-document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch():startAutoFetch();});
+
+document.getElementById('closeHistory').addEventListener('click',closeHistory);
+document.getElementById('backdrop').addEventListener('click',closeHistory);
+window.addEventListener('DOMContentLoaded',()=>{startAutoFetch();});
+document.getElementById("dailyScale").addEventListener("change", (e)=>{dailyMax = Number(e.target.value); renderWeek(); });
+document.getElementById("weeklyScale").addEventListener("change", (e)=>{weeklyMax = Number(e.target.value); renderWeek(); });
+document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch():startAutoFetch(); });
 </script>
 
 </body>
