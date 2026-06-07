@@ -16,43 +16,29 @@ const messaging = getMessaging(app);
 
 window.enableFCM = async function () {
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") {
-    alert("Notification permission denied");
+  if (permission !== "granted") {alert("Notification permission denied");
     return;
   }
   if ('serviceWorker' in navigator) {
-    try {
-      await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-    } catch (err) {
-      console.error("Service Worker registration failed:", err);
+    try {await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    } catch (err) {console.error("Service Worker registration failed:", err);
       return;
     }
   }
   const registration = await navigator.serviceWorker.ready;
-  
-  try {
-    const token = await getToken(messaging, {
+  try {const token = await getToken(messaging, {
       vapidKey: "BPNWuskZ3rcDP2LObbaFFtqIXYa1WFldoSE0qs71C4hR_f6Rl6D24kwCBKqPOQ7KeMWqrcKSG_FGDpzGACzwDRo",
       serviceWorkerRegistration: registration
     });
-
-    if (!token) {
-      alert("Failed to get FCM token");
+    if (!token) {alert("Failed to get FCM token");
       return;
     }
-    
     localStorage.setItem("fcmToken", token);
     localStorage.setItem("notificationsEnabled", "true");
-
-    await fetch("https://rvm.iffatadibamusaffa.workers.dev/register-token", {
-        method: "POST",
-        body: token
-    });
-
+    await fetch("https://rvm.iffatadibamusaffa.workers.dev/register-token", {method: "POST", body: token});
     console.log("FCM TOKEN:", token);
     console.log("Token Sent to Cloudflare");
     return token;
-    
   } catch (error) {
     console.error("Error generating or sending token:", error);
     alert("An error occurred while enabling notifications. Check console.");
@@ -61,36 +47,28 @@ window.enableFCM = async function () {
 
 window.disableFCM = async function () {
   const token = localStorage.getItem("fcmToken");
-  
-  if (!token) {
-    localStorage.setItem("notificationsEnabled", "false");
+  if (!token) {localStorage.setItem("notificationsEnabled", "false");
     return;
   }
-  try {
-    await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
+  try {await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
       method: "POST",
       body: token
     });
-    if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.getRegistration('./');
-      if (registration) {
-        const existingSub = await registration.pushManager.getSubscription();
-        if (existingSub) {
-          await existingSub.unsubscribe();
+    if ('serviceWorker' in navigator) {const registration = await navigator.serviceWorker.getRegistration('./');
+      if (registration) {const existingSub = await registration.pushManager.getSubscription();
+        if (existingSub) {await existingSub.unsubscribe();
           console.log("Browser push subscription safely removed.");
         }
       }
     }
-    try {
-      await deleteToken(messaging);
+    try {await deleteToken(messaging);
     } catch (fbError) {
       console.log("Note: Firebase background token deletion skipped (expected on subfolder hosting).");
     }
+
     localStorage.removeItem("fcmToken");
     localStorage.setItem("notificationsEnabled", "false");
-
     console.log("Notifications successfully disabled!");
-
   } catch (error) {
     console.error("Error disabling FCM:", error);
     localStorage.setItem("notificationsEnabled", "false");
