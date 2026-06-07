@@ -12,7 +12,11 @@ firebase.initializeApp({
 
 // firebase.messaging();
 const messaging = firebase.messaging();
+// messaging.onBackgroundMessage((payload) => {
+//   console.log("[firebase-messaging-sw.js] Background message", payload);
+//   self.registration.showNotification(payload.notification?.title || "RVM Notification", {body: payload.notification?.body || ""});
+// });
+
 messaging.onBackgroundMessage((payload) => {
-  console.log("[firebase-messaging-sw.js] Background message", payload);
-  self.registration.showNotification(payload.notification?.title || "RVM Notification", {body: payload.notification?.body || ""});
+  console.log("[firebase-messaging-sw.js] Background message received", payload);
 });
