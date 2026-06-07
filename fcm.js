@@ -61,21 +61,35 @@ window.enableFCM = async function () {
 
 window.disableFCM = async function () {
   const token = localStorage.getItem("fcmToken");
+  
   if (!token) {
     localStorage.setItem("notificationsEnabled", "false");
     return;
   }
-
   try {
     await fetch("https://rvm.iffatadibamusaffa.workers.dev/unregister-token", {
       method: "POST",
       body: token
     });
-    await deleteToken(messaging);
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration('./');
+      if (registration) {
+        const existingSub = await registration.pushManager.getSubscription();
+        if (existingSub) {
+          await existingSub.unsubscribe();
+          console.log("Browser push subscription safely removed.");
+        }
+      }
+    }
+    try {
+      await deleteToken(messaging);
+    } catch (fbError) {
+      console.log("Note: Firebase background token deletion skipped (expected on subfolder hosting).");
+    }
     localStorage.removeItem("fcmToken");
     localStorage.setItem("notificationsEnabled", "false");
 
-    console.log("Token successfully deleted and notifications disabled.");
+    console.log("Notifications successfully disabled!");
 
   } catch (error) {
     console.error("Error disabling FCM:", error);
