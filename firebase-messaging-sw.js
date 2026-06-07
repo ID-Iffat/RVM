@@ -10,13 +10,7 @@ firebase.initializeApp({
   appId: "1:814557927417:web:720a45e7abaebb1207cf28"
 });
 
-// firebase.messaging();
 const messaging = firebase.messaging();
-// messaging.onBackgroundMessage((payload) => {
-//   console.log("[firebase-messaging-sw.js] Background message", payload);
-//   self.registration.showNotification(payload.notification?.title || "RVM Notification", {body: payload.notification?.body || ""});
-// });
-
 messaging.onBackgroundMessage((payload) => {
   console.log("[firebase-messaging-sw.js] Background message received", payload);
 });
