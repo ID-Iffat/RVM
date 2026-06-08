@@ -12,20 +12,21 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-let messaging = null;
-if ('Notification' in window) {
-    messaging = getMessaging(app);
-} else {
-    console.log("Android WebView detected. Skipping Firebase Web SDK initialization.");
-}
-// const messaging = getMessaging(app);
+// Commented part = code attempt used for mobile app
+// let messaging = null;
+// if ('Notification' in window) {
+//     messaging = getMessaging(app);
+// } else {
+//     console.log("Android WebView detected. Skipping Firebase Web SDK initialization.");
+// }
+const messaging = getMessaging(app);
 
 window.enableFCM = async function () {
-  if (!('Notification' in window)) {
-    console.log("Running in Android WebView. Skipping Web Push.");
-    alert("Notifications are automatically handled by the Android App!");
-    return; // Stop running here so it never hits the crash below!
-  }
+  // if (!('Notification' in window)) {
+  //   console.log("Running in Android WebView. Skipping Web Push.");
+  //   alert("Notifications are automatically handled by the Android App!");
+  //   return; // Stop running here so it never hits the crash below!
+  // }
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {alert("Notification permission denied");
     return;
