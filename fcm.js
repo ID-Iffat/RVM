@@ -15,6 +15,11 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 window.enableFCM = async function () {
+  if (!('Notification' in window)) {
+    console.log("Running in Android WebView. Skipping Web Push.");
+    alert("Notifications are automatically handled by the Android App!");
+    return; // Stop running here so it never hits the crash below!
+  }
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {alert("Notification permission denied");
     return;
