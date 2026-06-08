@@ -12,7 +12,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+let messaging = null;
+if ('Notification' in window) {
+    messaging = getMessaging(app);
+} else {
+    console.log("Android WebView detected. Skipping Firebase Web SDK initialization.");
+}
+// const messaging = getMessaging(app);
 
 window.enableFCM = async function () {
   if (!('Notification' in window)) {
