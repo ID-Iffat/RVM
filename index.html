@@ -134,7 +134,8 @@ function formatUptime(sec){
 
 function formatLastSeen(ts){
   if(!ts || ts === "-") return "-";
-  const timestampNumber = Number(ts);
+  let timestampNumber = Number(ts);
+  if (timestampNumber < 10000000000) {timestampNumber = timestampNumber * 1000;}
   const d = new Date(timestampNumber);
   const day = String(d.getDate()).padStart(2,"0");
   const month = String(d.getMonth()+1).padStart(2,"0");
