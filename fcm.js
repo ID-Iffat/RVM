@@ -27,10 +27,12 @@ window.enableFCM = async function () {
   //   alert("Notifications are automatically handled by the Android App!");
   //   return; // Stop running here so it never hits the crash below!
   // }
+  console.log("Button clicked, requesting permission...");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {alert("Notification permission denied");
     return;
   }
+  console.log("Browser returned:", permission);
   if ('serviceWorker' in navigator) {
     try {await navigator.serviceWorker.register('./firebase-messaging-sw.js');
     } catch (err) {console.error("Service Worker registration failed:", err);
