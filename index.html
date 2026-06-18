@@ -122,6 +122,7 @@ const SHEET_API = "https://script.google.com/macros/s/AKfycbwWp4pB_94dkI62JVTzkM
 const FETCH_INTERVAL_MS = 5000;         // ngambil data setiap 5 detik
 function pctClamp(v){ v=Math.round(v); return isNaN(v)?0:Math.max(0,Math.min(100,v));}
 
+// data dri worker pake format unix jdi perlu di ubah ke nomor biasa
 function formatUptime(sec){
   sec = Number(sec)||0;
   const d = Math.floor(sec/86400);
@@ -132,6 +133,7 @@ function formatUptime(sec){
   return `${m}m`;
 }
 
+// sama kek diatas cuman ad tanggal ny jg bukan cuma nomor
 function formatLastSeen(ts){
   if(!ts || ts === "-") return "-";
   let timestampNumber = Number(ts);
@@ -146,7 +148,7 @@ function formatLastSeen(ts){
   return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
 
-// Generate cards
+// buat kartu 1/1 pake blueprint diatas, pake cloneNode 
 function generateCardsFromDevices(devices){
   const dashboard = document.getElementById('dashboard');
   const template = dashboard.querySelector('[data-template="true"]');
@@ -169,7 +171,7 @@ function generateCardsFromDevices(devices){
   
 }
 
-// Update card values
+// buat isi setiap kartu ny
 function updateCardFromValues(cardEl, values){
   // Elements
   const plasticEl = cardEl.querySelector('.plastic-val');
@@ -204,7 +206,7 @@ function updateCardFromValues(cardEl, values){
   totalText.innerText = totalPct;
 }
 
-// Fetch live counts
+// ngambil data dri worker sama nentuin brp kartu yg perlu dibuat + ngeruting data ny ke kartu mana aj
 let fetchIntervalId=null;
 let isFetchingCounts=false;
 async function fetchCounts(){
@@ -371,6 +373,7 @@ async function showHistory(rvmId){
   }catch(err){console.error("History fetch error:",err); tableBody.innerHTML='<tr><td colspan="4">Error loading history.</td></tr>'; destroyCharts();}
 }
 
+// bedain ON sama OFF ny pake local storage krna gk ad akun, jdi klo reset browser data kereset jg
 function updateNotifButton() {
   const btn = document.getElementById("notifBtn");
   const enabled =
@@ -408,6 +411,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
+// setiap kli overlay history ny di close bakalan ngehancurin charts ny biar klo buka history lain gk rusak
 function closeHistory(){
   document.getElementById('backdrop').style.display='none'; 
   const hist=document.getElementById('historyContainer'); 
@@ -416,6 +420,8 @@ function closeHistory(){
         destroyCharts();
 }
 
+// fungsi buat manggil overlay history, bakalan manggil yg terdekat dri .history-btn keatas DOM tree
+// Document Object Model, yg terdekat ya brrti data-rvm = rvmId = RVM 1, RVM 2, etc
 document.addEventListener('click',function(e){
   const btn=e.target.closest('.history-btn'); 
   if(btn){const rvm=Number(btn.getAttribute('data-rvm'))||Number(btn.closest('.card').getAttribute('data-rvm')); 
@@ -424,9 +430,12 @@ document.addEventListener('click',function(e){
 
 document.getElementById('closeHistory').addEventListener('click',closeHistory);
 document.getElementById('backdrop').addEventListener('click',closeHistory);
+// DOMContentLoaded buat mulai ngambil data dri worker tpi setelah template ny muncul biar gk rusak
 window.addEventListener('DOMContentLoaded',()=>{startAutoFetch();});
+// dailyScale sama weeklyScale buat filter di history, fungsi ne ngegambar ulang chart ny sesuai angka yg dipilih biar gk fetch trus ke google app script
 document.getElementById("dailyScale").addEventListener("change", (e)=>{dailyMax = Number(e.target.value); renderWeek(); });
 document.getElementById("weeklyScale").addEventListener("change", (e)=>{weeklyMax = Number(e.target.value); renderWeek(); });
+// visibilitychange kepake biar gk manggil worker trus klo website ny gk lgi focus 
 document.addEventListener('visibilitychange',()=>{document.hidden?stopAutoFetch():startAutoFetch(); });
 </script>
 
