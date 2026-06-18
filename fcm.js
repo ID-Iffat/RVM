@@ -29,7 +29,7 @@ window.enableFCM = async function () {
   // }
   console.log("Button clicked, requesting permission...");
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") {alert("Notification permission denied");
+  if (permission !== "granted") {alert("Notification permission gagal");
     return;
   }
   console.log("Browser returned:", permission);
