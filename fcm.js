@@ -28,18 +28,8 @@ window.enableFCM = async function () {
   //   return; // Stop running here so it never hits the crash below!
   // }
   console.log("Button clicked, requesting permission...");
-  alert(
-  "Before:\n" +
-  "Notification.permission = " + Notification.permission
-  );
   const permission = await Notification.requestPermission();
-  alert(
-    "After:\n" +
-    "requestPermission() = " + permission +
-    "\nNotification.permission = " + Notification.permission
-  );
-  if (permission !== "granted") {
-    alert("Notification permission gagal");
+  if (permission !== "granted") {alert("Notification permission gagal");
     return;
   }
   console.log("Browser returned:", permission);
