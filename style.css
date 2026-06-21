@@ -1,0 +1,648 @@
+:root{
+  --bg:#0f172a;
+  --surface:#111827;
+  --surface-light:#1f2937;
+  --border:#263043;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+
+  --accent:#3b82f6;
+  --plastic:#3b82f6;
+  --can:#f59e0b;
+  --total:#10b981;
+
+  --radius:18px;
+}
+
+/* GLOBAL */
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Segoe UI,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* HEADER */
+header{
+  padding:22px 32px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#0b1220;
+  border-bottom:1px solid var(--border);
+}
+
+header h1{
+  margin:0;
+  font-size:1.6rem;
+  font-weight:600;
+  letter-spacing:.3px;
+}
+
+.enable-notif{
+  background:linear-gradient(135deg,#3b82f6,#6366f1);
+  border:none;
+  padding:10px 18px;
+  color:white;
+  font-weight:600;
+  border-radius:14px;
+  cursor:pointer;
+  transition:.25s;
+}
+
+.enable-notif:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(59,130,246,.35);
+}
+
+.enable-notif.enabled{
+  background:#16a34a;
+}
+
+.enable-notif.disabled{
+  background:#dc2626;
+}
+
+/* GRID */
+main{
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 26px;
+  max-width: 1400px; /* Prevents cards from stretching too wide on massive monitors */
+  margin: 0 auto;    /* Centers the grid */
+}
+
+/* CARD */
+.card{
+  background:var(--surface);
+  padding:24px;
+  border-radius:22px;
+  border:1px solid var(--border);
+  box-shadow:0 20px 40px rgba(0,0,0,.4);
+  transition:.3s;
+}
+
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 30px 60px rgba(0,0,0,.55);
+}
+
+.card h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom:2px;
+}
+
+.rvm-location {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-weight: normal;
+}
+
+.status-dot{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  margin-left:8px;
+  margin-right:4px;
+}
+
+.status-dot.online{
+  background:#22c55e;
+}
+
+.status-dot.offline{
+  background:#ef4444;
+}
+
+.status-text{
+  font-size:0.9rem;
+  color:var(--muted);
+}
+
+/* .rvm-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:0.85rem;
+  color:var(--muted);
+  margin-top:2px;
+} */
+
+.rvm-uptime,
+.rvm-lastseen{
+  font-size:0.85rem;
+  color:var(--muted);
+  margin-top:2px;
+  white-space:nowrap;
+  margin-bottom:2px;
+}
+
+/* COUNT ROWS */
+.counts{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:12px;
+  gap:10px;
+}
+
+.counts.columns-3 .col{
+  flex:1;
+  text-align:center;
+  font-size:.9rem;
+  background:var(--surface-light);
+  padding:12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+}
+
+.row-volumes .col{
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  font-size:.85rem;
+}
+
+/* BARS */
+.bars{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:14px;
+  margin-top:18px;
+  margin-bottom:20px;
+}
+
+.bar-container{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+.bar{
+  background:#0b1220;
+  width:100%;
+  height:140px;
+  border-radius:16px;
+  display:flex;
+  align-items:flex-end;
+  overflow:hidden;
+  position:relative;
+  border:1px solid var(--border);
+}
+
+.bar > div{
+  width:100%;
+  transition:height .5s ease;
+  position:absolute;
+  bottom:0;
+  left:0;
+  border-radius:16px 16px 0 0;
+}
+
+/* COLORS */
+/* .fill-plastic-bar{ background:var(--plastic); }
+.fill-can-bar{ background:var(--can); }
+.fill-total-bar{ background:var(--total); } */
+
+.bar-container .label{
+  margin-top:8px;
+  font-size:.85rem;
+  color:var(--muted);
+}
+
+/* HISTORY BUTTON */
+.history-btn{
+  width:100%;
+  background:linear-gradient(135deg,#3b82f6,#6366f1);
+  color:white;
+  padding:12px 0;
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  font-weight:600;
+  transition:.25s;
+}
+
+.history-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(59,130,246,.4);
+}
+
+.history-btn:disabled{
+  background:#374151;
+  cursor:not-allowed;
+}
+
+/* BACKDROP */
+#backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  z-index:998;
+  display:none;
+}
+
+/* HISTORY MODAL */
+#historyContainer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 96vw;
+  height: 94vh;
+  max-width: none;
+  max-height: none;
+
+  background: var(--surface);
+  padding: 0;
+  border-radius: 16px;
+
+  box-shadow: 0 12px 48px rgba(0,0,0,0.75);
+  z-index: 999;
+  display: none;
+  overflow: hidden;
+}
+
+/* HEADER */
+#historyHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 24px;
+  background:#111827;
+  border-bottom:1px solid var(--border);
+}
+
+#historyHeader h2{
+  margin:0;
+  font-size:1.2rem;
+}
+
+#historyHeader button{
+  background:#ef4444;
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+/* BODY */
+#historyBody{
+  flex:1;
+  display:grid;
+  grid-template-columns:1.6fr 1fr;
+  gap:22px;
+  padding:22px;
+  background:#0f172a;
+  overflow:hidden;
+}
+
+.left-column{
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  gap:22px;
+}
+
+.right-column{
+  display:flex;
+}
+
+/* CHART */
+.chart-card{
+  width:100%;
+  height:240px;
+  margin-bottom:16px;
+}
+
+.chart-title{
+  text-align:center;
+  font-weight:600;
+  margin-bottom:8px;
+}
+
+/* TABLE */
+.table-card{
+  background:#111827;
+  border-radius:18px;
+  padding:16px;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  border:1px solid var(--border);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.85rem;
+}
+
+table th,
+table td{
+  border:1px solid var(--border);
+  padding:8px;
+  text-align:center;
+}
+
+table th{
+  background:#0b1220;
+  font-weight:600;
+}
+
+/* NAV BUTTONS */
+.history-nav{
+  margin-top:auto;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+
+@media (max-width: 1200px) {main { grid-template-columns: repeat(2, 1fr); }}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  main { grid-template-columns: 1fr;}
+  .chart-card canvas {
+    max-height: 240px;
+  }
+  /* Only affect history overlay */
+  #historyBody {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  /* Let table size naturally on mobile */
+  .table-scroll {
+    flex: none;
+    overflow-y: visible;
+  }
+
+  /* Disable desktop columns */
+  .left-column,
+  .right-column {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Charts go back to vertical flow */
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Table behaves like original version */
+  .table-card {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Table scrolls naturally */
+  .table-scroll {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+  }
+
+  /* Buttons behave like original mobile view */
+  .history-nav {
+    order: -1;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+}
+
+/* ===== LOCATION PAGE TABLE SCROLL ONLY ===== */
+.location-table-scroll {
+  max-height: 440px;     /* adjust if needed */
+  overflow-y: auto;
+  border-radius: 12px;
+}
+
+/* Match the cumulative text to the bar heights */
+.cumulative-container {
+  height: 140px; /* Exact height of the .bar */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Pushes text to the bottom */
+  gap: 16px; /* Spacing between the two text blocks */
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 24px; /* Aligns visually with the bottom of the bars */
+}
+
+.cumulative-container span {
+  font-size: 1.2rem; /* Make the numbers pop a bit more */
+  color: var(--text);
+}
+
+/* --- NEW CARD DESIGN STYLES --- */
+.status-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.status-title-row .status-dot {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.status-title-row .rvm-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.card-header-custom .rvm-uptime,
+.card-header-custom .rvm-lastseen {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  margin-top: 4px;
+}
+
+.card-body-custom {
+  display: flex;
+  margin-top: 20px;
+}
+
+.card-left-col {
+  flex: 1.6; /* Takes up slightly more room */
+  padding-right: 15px;
+}
+
+.card-divider {
+  width: 2px;
+  background: var(--border);
+  margin: 0 15px;
+  border-radius: 2px;
+}
+
+.card-right-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-left: 5px;
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 0.90rem;
+  margin-bottom: 12px;
+}
+
+/* Volume Bars */
+.volume-bars-custom {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.vol-bar-container {
+  flex: 1;
+  text-align: center;
+}
+
+.vol-bar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  height: 170px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vol-bar .bg-img {
+  max-height: 75%;
+  max-width: 75%;
+  object-fit: contain;
+  opacity: 0.85;
+  z-index: 1; /* Puts the image behind the semi-transparent fill */
+}
+
+/* Dynamic fill styling */
+.fill-plastic-bar, .fill-can-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0.6; /* Allows the PNG image underneath to show through the color */
+  z-index: 2;
+  transition: height 0.5s ease, background-color 0.5s ease;
+}
+
+.vol-label {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* Counting Boxes */
+.counting-boxes {
+  display: flex;
+  gap: 15px;
+}
+
+.count-box {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.count-box .icon-img {
+  height: 28px;
+  object-fit: contain;
+}
+
+/* Totals Sidebar */
+.totals-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 15px;
+}
+
+.total-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.total-item .icon-img-large {
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Updated History Button */
+.history-btn-custom {
+  background: #1d4ed8; /* Blue from mockup */
+  border-radius: 12px;
+  font-size: 1.1rem;
+  padding: 14px 0;
+}
+
+/* Header Logo */
+.header-logo {
+  height: 75px; /* Adjust this number to make the logo larger or smaller */
+  max-width: 250px;
+  object-fit: contain;
+}
+
+/* --- MOBILE HEADER FIXES --- */
+@media (max-width: 768px) {
+  header {
+    padding: 16px 20px; 
+    align-items: center; 
+  }
+  
+  .header-logo {
+    max-width: 140px; /* Scales the logo down so it fits */
+    height: auto;
+  }
+  
+  .header-buttons {
+    display: flex;
+    flex-direction: column; /* Stacks the buttons vertically on mobile */
+    align-items: flex-end; /* Forces the buttons to stick to the right edge */
+    gap: 8px; /* Adds a small gap between the stacked buttons */
+  }
+  
+  .enable-notif {
+    padding: 8px 12px;
+    font-size: 0.8rem; /* Makes the button text slightly smaller */
+  }
+
+  /* Optional: Drop the section title size even further just for mobile if needed */
+  .section-title {
+    font-size: 0.9rem;
+  }
+}

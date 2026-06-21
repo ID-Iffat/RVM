@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RVM Dashboard - Map View</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+<style>
+  /* Map Specific Styles */
+  #dashboard {
+    padding: 0;
+    display: block;
+    position: relative;
+    height: calc(100vh - 85px); /* Full height minus header */
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* Floating Card that appears when clicking a pin */
+  #active-card-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    z-index: 1000;
+    display: none; /* Hidden until a pin is clicked */
+  }
+
+  .close-card-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Mobile responsiveness for the map card */
+  @media (max-width: 768px) {
+    #active-card-container {
+      top: auto;
+      bottom: 20px;
+      right: 50%;
+      transform: translateX(50%);
+      width: 90%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="VTelYU.png" alt="VTelYU Logo" class="header-logo">
+  <div class="header-buttons">
+  <div class="header-buttons">
+    <button class="enable-notif" onclick="window.location.href='index.html'">Lihat semua unit</button>
+  </div>
+</header>
+
+<main id="dashboard">
+  <div id="map"></div>
+
+  <div id="active-card-container">
+    <section class="card" id="active-card">
+      <button class="close-card-btn" onclick="closeActiveCard()">×</button>
+      <span class="status-text" style="display: none;">Offline</span>
+      <span class="total-val" style="display: none;">-</span>
+
+      <div class="card-header-custom">
+        <div class="status-title-row">
+          <span class="status-dot offline"></span>
+          <span class="rvm-title">RVM 1</span>
+        </div>
+        <div class="rvm-meta">
+          <div class="rvm-uptime">Waktu Aktif : -</div>
+          <div class="rvm-lastseen">Terakhir Aktif : -</div>
+        </div>
+      </div>
+
+      <div class="card-body-custom">
+        <div class="card-left-col">
+          <div class="section-title">Volume sampah waktu nyata</div>
+          <div class="volume-bars-custom">
+            <div class="vol-bar-container">
+              <div class="vol-bar">
+                <img src="plastik.png" class="bg-img" alt="botol plastik">
+                <div class="fill-plastic-bar" style="height:0%"></div>
+              </div>
+              <div class="vol-label">Plastik (<span class="plastic-text">-</span>%)</div>
+            </div>
+            <div class="vol-bar-container">
+              <div class="vol-bar">
+                <img src="kaleng.png" class="bg-img" alt="kaleng">
+                <div class="fill-can-bar" style="height:0%"></div>
+              </div>
+              <div class="vol-label">Kaleng (<span class="can-text">-</span>%)</div>
+            </div>
+          </div>
+
+          <div class="section-title">Counting waktu nyata</div>
+          <div class="counting-boxes">
+            <div class="count-box">
+              <img src="plastik.png" alt="plastik icon" class="icon-img">
+              <span class="plastic-val">-</span>
+            </div>
+            <div class="count-box">
+              <img src="kaleng.png" alt="kaleng icon" class="icon-img">
+              <span class="can-val">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-right-col">
+          <div>
+            <div class="section-title">Total hari ini</div>
+            <div class="totals-container">
+              <div class="total-item">
+                <img src="plastik.png" alt="plastik icon" class="icon-img-large">
+                <span><span class="total-plastic-cum">0</span>%</span>
+              </div>
+              <div class="total-item">
+                <img src="kaleng.png" alt="kaleng icon" class="icon-img-large">
+                <span><span class="total-can-cum">0</span>%</span>
+              </div>
+            </div>
+          </div>
+          <button class="history-btn history-btn-custom" data-rvm="1">History</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div id="backdrop" aria-hidden="true"></div>
+<div id="historyContainer" aria-hidden="true">
+  <div id="historyHeader">
+    <h2>History for <span id="historyTitle">-</span></h2>
+    <div><button id="closeHistory">Close</button></div>
+  </div>
+  <div id="historyBody">
+    <div class="left-column">
+      <div class="chart-card">
+        <div class="chart-title">
+          Daily Chart | Sort by
+          <select id="dailyScale">
+            <option value="500" selected>500</option>
+            <option value="1000">1000</option>
+            <option value="5000">5000</option>
+          </select>
+        </div>
+        <canvas id="dailyChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">
+          Weekly Chart | Sort by
+          <select id="weeklyScale">
+            <option value="5000" selected>5000</option>
+            <option value="10000">10000</option>
+            <option value="50000">50000</option>
+          </select>
+        </div>
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+    <div class="right-column">
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Plastik</th>
+              <th>Kaleng</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+        <div class="history-nav">
+          <button id="prevWeekBtn" class="history-btn">⬅ Previous</button>
+          <button id="nextWeekBtn" class="history-btn">Next ➡</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://rvm.iffatadibamusaffa.workers.dev";
+const SHEET_API = "https://script.google.com/macros/s/AKfycbwWp4pB_94dkI62JVTzkMlQVBMVoV-tTcNYcjexaWc7jeuTL6n4PYeXHurkKeHjCOpHuA/exec";
+const FETCH_INTERVAL_MS = 5000;
+
+// ===== MAP INITIALIZATION =====
+// Define the exact boundaries you provided
+const bounds = [
+  [-6.968674773896329, 107.62667198856248], // North West
+  [-6.9775940601993005, 107.63320380035844] // South East
+];
+
+const map = L.map('map', {
+  maxBounds: bounds,
+  maxBoundsViscosity: 1.0,
+  minZoom: 15
+}).setView([-6.97306485630476, 107.63239633159709], 17);
+
+// Load free OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+let markers = {};
+let latestData = [];
+let selectedRvmId = null;
+
+// ===== CARD UTILITIES (Copied from index.html) =====
+function pctClamp(v){ v=Math.round(v); return isNaN(v)?0:Math.max(0,Math.min(100,v));}
+function getDynamicColor(percentage) {
+  const boundedPct = Math.min(percentage, 90); 
+  const hue = 120 - ((boundedPct / 90) * 120); 
+  return `hsl(${hue}, 85%, 50%)`;
+}
+
+function formatUptime(sec){
+  sec = Number(sec)||0;
+  const d = Math.floor(sec/86400);
+  const h = Math.floor((sec%86400)/3600);
+  const m = Math.floor((sec%3600)/60);
+  if(d>0) return `${d}d ${h}h`;
+  if(h>0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function formatLastSeen(ts){
+  if(!ts || ts === "-") return "-";
+  let timestampNumber = Number(ts);
+  if (timestampNumber < 10000000000) {timestampNumber = timestampNumber * 1000;}
+  const d = new Date(timestampNumber);
+  const day = String(d.getDate()).padStart(2,"0");
+  const month = String(d.getMonth()+1).padStart(2,"0");
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2,"0");
+  const minutes = String(d.getMinutes()).padStart(2,"0");
+  const seconds = String(d.getSeconds()).padStart(2,"0");
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
+function updateCumulative(rvmId, type, currentVal) {
+  let store = JSON.parse(localStorage.getItem('rvm_cumulative') || '{}');
+  const todayStr = new Date().toLocaleDateString();
+  
+  if (store.date !== todayStr) {
+    store = { date: todayStr, data: {} };
+  }
+  
+  if (!store.data[rvmId]) {
+    store.data[rvmId] = { plastic: { cum: 0, last: 0 }, can: { cum: 0, last: 0 } };
+  }
+  
+  let record = store.data[rvmId][type];
+  if (currentVal < record.last && record.last >= 75) {
+    record.cum += record.last;
+  }
+  record.last = currentVal;
+  
+  localStorage.setItem('rvm_cumulative', JSON.stringify(store));
+  return record.cum + currentVal;
+}
+
+// ===== UPDATE ACTIVE CARD =====
+function closeActiveCard() {
+  document.getElementById('active-card-container').style.display = 'none';
+  selectedRvmId = null;
+}
+
+function selectDevice(rvmId) {
+  selectedRvmId = rvmId;
+  document.getElementById('active-card-container').style.display = 'block';
+  refreshActiveCard();
+}
+
+function refreshActiveCard() {
+  if (!selectedRvmId) return;
+  const device = latestData.find(d => d.device_id.replace(/RVM/i,'') === selectedRvmId);
+  if (!device) return;
+
+  const card = document.getElementById('active-card');
+  const formattedId = device.device_id.replace(/(RVM)(\d+)/i, '$1 $2');
+  
+  card.querySelector('.rvm-title').innerText = formattedId;
+  card.querySelector('.status-dot').className = `status-dot ${device.status === "online" ? "online" : "offline"}`;
+  card.querySelector('.status-text').innerText = device.status === "online" ? "Online" : "Offline";
+  card.querySelector('.rvm-uptime').innerText = "Uptime: " + formatUptime(device.uptime);
+  card.querySelector('.rvm-lastseen').innerText = "Last seen: " + formatLastSeen(device.lastSeen);
+  card.querySelector('.history-btn').setAttribute('data-rvm', selectedRvmId);
+
+  const plasticCum = updateCumulative(device.device_id, 'plastic', Number(device.plasticVolume || 0));
+  const canCum = updateCumulative(device.device_id, 'can', Number(device.canVolume || 0));
+
+  const pPct = pctClamp(Number(device.plasticVolume || 0));
+  const cPct = pctClamp(Number(device.canVolume || 0));
+
+  card.querySelector('.plastic-val').innerText = Number(device.plastic || 0);
+  card.querySelector('.can-val').innerText = Number(device.can || 0);
+  card.querySelector('.total-val').innerText = Number(device.plastic || 0) + Number(device.can || 0);
+
+  const fillPlastic = card.querySelector('.fill-plastic-bar');
+  fillPlastic.style.height = pPct + '%';
+  fillPlastic.style.backgroundColor = getDynamicColor(pPct);
+  
+  const fillCan = card.querySelector('.fill-can-bar');
+  fillCan.style.height = cPct + '%';
+  fillCan.style.backgroundColor = getDynamicColor(cPct);
+
+  card.querySelector('.plastic-text').innerText = pPct;
+  card.querySelector('.can-text').innerText = cPct;
+  card.querySelector('.total-plastic-cum').innerText = plasticCum;
+  card.querySelector('.total-can-cum').innerText = canCum;
+}
+
+// ===== FETCH AND PLOT MAP DATA =====
+async function fetchCounts(){
+  try {
+    const resp = await fetch(API_URL, { cache: "no-store" });
+    if (!resp.ok) throw new Error(resp.status);
+    latestData = await resp.json();
+
+    latestData.forEach(device => {
+      const rvmId = device.device_id.replace(/RVM/i,'');
+      
+      // Parse coordinates (e.g. "-6.97304, 107.63242")
+      if (device.location && device.location.includes(',')) {
+        const parts = device.location.split(',');
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          if (!markers[rvmId]) {
+            // Create new marker
+            markers[rvmId] = L.marker([lat, lng])
+              .addTo(map)
+              .bindTooltip(`RVM ${rvmId}`, { permanent: false, direction: 'top' })
+              .on('click', () => selectDevice(rvmId));
+          } else {
+            // Update marker position just in case it physically moved
+            markers[rvmId].setLatLng([lat, lng]);
+          }
+        }
+      }
+      
+      // If this card is currently open, refresh it live
+      if (selectedRvmId === rvmId) refreshActiveCard();
+    });
+  } catch(err){
+    console.error("Error fetching map counts:", err);
+  }
+}
+
+setInterval(fetchCounts, FETCH_INTERVAL_MS);
+fetchCounts();
+
+// ===== HISTORY CHART LOGIC (Identical to index.html) =====
+let historyData=[], weekIndex=0, dailyChartInstance=null, weeklyChartInstance=null, dailyMax = 1000, weeklyMax = 10000;
+function fmtDate(rowDate){ 
+  if(typeof rowDate==='string'){
+    if(rowDate.includes('T')) return rowDate.split('T')[0]; 
+    return rowDate;} 
+  return String(rowDate);}
+
+function destroyCharts(){
+  if(dailyChartInstance){try{dailyChartInstance.destroy();}catch(e){} dailyChartInstance=null;}
+  if(weeklyChartInstance){try{weeklyChartInstance.destroy();}catch(e){} weeklyChartInstance=null;}
+}
+
+function renderWeek(){
+  const start=weekIndex*7;
+  const weekData=historyData.slice(start,start+7);
+  if(!weekData||weekData.length===0){
+    document.getElementById('historyTable').innerHTML='<tr><td colspan="4">No data</td></tr>'; 
+    destroyCharts(); return;
+  }
+  const labels=weekData.map(r=>fmtDate(r.timestamp));
+  const plasticSeries=weekData.map(r=>Number(r.plastic||0));
+  const canSeries=weekData.map(r=>Number(r.can||0));
+  const totalDaily=weekData.map(r=>Number(r.plastic+r.can||0));
+  const totals=plasticSeries.map((p,i)=>p+(canSeries[i]||0));
+  const weeklyTotal=totals.reduce((s,v)=>s+v,0);
+  destroyCharts();
+
+  dailyChartInstance=new Chart(document.getElementById('dailyChart').getContext('2d'),{
+    type:'line',
+    data:{ labels, datasets:[
+      {label:'Plastik',data:plasticSeries,stack:'stack1',borderColor:'#3b82f6',backgroundColor:'#3b82f6'},
+      {label:'Kaleng',data:canSeries,stack:'stack2',borderColor:'#f59e0b',backgroundColor:'#f59e0b'},
+      {label:'Total',data:totalDaily,stack:'stack3',borderColor:'#10b981',backgroundColor:'#10b981'}
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, 
+      plugins:{legend:{position:'top'}}, 
+      scales:{x:{},y:{min:0,max:dailyMax,ticks:{stepSize:dailyMax/10,precision:0}}}, datasets:{bar:{maxBarThickness:48}}}
+  });
+
+  weeklyChartInstance=new Chart(document.getElementById('weeklyChart').getContext('2d'),{
+    type:'bar',
+    data:{ labels:['Plastik','Kaleng','Total'], 
+    datasets:[{label:'7-day totals',data:[plasticSeries.reduce((a,b)=>a+b,0),canSeries.reduce((a,b)=>a+b,0),weeklyTotal],
+          borderRadius:6, backgroundColor: ['#3b82f6','#f59e0b','#10b981']}]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, 
+      scales:{y:{min:0,max:weeklyMax,ticks:{stepSize:weeklyMax/10,precision:0}}}}
+  });
+
+  const tableBody=document.getElementById('historyTable'); tableBody.innerHTML='';
+  weekData.forEach(row=>{ const p=Number(row.plastic||0), c=Number(row.can||0); 
+    tableBody.innerHTML+=`<tr><td>${fmtDate(row.timestamp)}</td><td>${p}</td><td>${c}</td><td>${p+c}</td></tr>`; });
+  document.getElementById('nextWeekBtn').disabled=((start+7)>=historyData.length);
+  document.getElementById('prevWeekBtn').disabled=(weekIndex===0);
+}
+
+async function showHistory(rvmId){
+  document.getElementById('active-card-container').style.display = 'none';
+  document.getElementById('backdrop').style.display = 'block';
+  const hist = document.getElementById('historyContainer'); 
+  hist.style.display = 'block'; 
+  hist.setAttribute('aria-hidden', 'false');
+  document.getElementById('historyTitle').innerText = `RVM ${rvmId}`;
+  
+  const tableBody = document.getElementById('historyTable'); 
+  tableBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+  
+  try{
+    const response = await fetch(`${SHEET_API}?bin=${encodeURIComponent(rvmId)}`,{cache:"no-store"});
+    if(!response.ok) throw new Error(response.status);
+    let data = await response.json();
+    if(!Array.isArray(data)){ 
+      if(typeof data==='object' && data!==null){ 
+        data=Object.keys(data).map(k=>{ const v=data[k]; return {date:k, plastic:v.plastic||v.p, can:v.can||v.c};});} 
+      else data=[];
+    }
+    historyData = data.filter(row => row.device_id === `RVM${rvmId}`).sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp));
+    weekIndex=0; renderWeek();
+  }catch(err){
+    console.error("History fetch error:",err); 
+    tableBody.innerHTML='<tr><td colspan="4">Error loading history.</td></tr>'; 
+    destroyCharts();
+  }
+}
+
+function closeHistory(){
+  document.getElementById('backdrop').style.display='none'; 
+  const hist=document.getElementById('historyContainer'); 
+  hist.style.display='none'; hist.setAttribute('aria-hidden','true'); destroyCharts();
+}
+
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('.history-btn'); 
+  if(btn && btn.id !== "prevWeekBtn" && btn.id !== "nextWeekBtn"){
+    const rvm = btn.getAttribute('data-rvm'); 
+    if(rvm) showHistory(rvm);
+  }
+});
+document.getElementById("nextWeekBtn").onclick=()=>{if((weekIndex+1)*7<historyData.length){weekIndex++;renderWeek();}};
+document.getElementById("prevWeekBtn").onclick=()=>{if(weekIndex>0){weekIndex--;renderWeek();}};
+document.getElementById('closeHistory').addEventListener('click',closeHistory);
+document.getElementById('backdrop').addEventListener('click',closeHistory);
+document.getElementById("dailyScale").addEventListener("change", (e)=>{dailyMax = Number(e.target.value); renderWeek(); });
+document.getElementById("weeklyScale").addEventListener("change", (e)=>{weeklyMax = Number(e.target.value); renderWeek(); });
+</script>
+
+</body>
+</html>
