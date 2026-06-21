@@ -1,2 +1,0 @@
-# RVM
-Tugas Akhir

@@ -68,9 +68,10 @@
 <body>
 
 <header>
-  <h1>RVM Map View</h1>
+  <img src="VTelYU.png" alt="VTelYU Logo" class="header-logo">
   <div class="header-buttons">
-    <button class="enable-notif" onclick="window.location.href='index.html'">View by Devices</button>
+  <div class="header-buttons">
+    <button class="enable-notif" onclick="window.location.href='index.html'">Lihat semua unit</button>
   </div>
 </header>
 
@@ -80,39 +81,72 @@
   <div id="active-card-container">
     <section class="card" id="active-card">
       <button class="close-card-btn" onclick="closeActiveCard()">×</button>
-      <h2>
-        <div>
-          <span class="rvm-title">RVM -</span>
+      <span class="status-text" style="display: none;">Offline</span>
+      <span class="total-val" style="display: none;">-</span>
+
+      <div class="card-header-custom">
+        <div class="status-title-row">
           <span class="status-dot offline"></span>
-          <span class="status-text">Offline</span>
+          <span class="rvm-title">RVM 1</span>
         </div>
-      </h2>
-      <div class="rvm-meta">
-        <div class="rvm-uptime">Uptime: -</div>
-        <div class="rvm-lastseen">Last seen: -</div>
-      </div>
-      <div class="section-title">Trash Counts :</div>
-      <div class="counts columns-3 row-counts">
-        <div class="col">🥤Plastik: <span class="plastic-val">-</span></div>
-        <div class="col">🥫Kaleng: <span class="can-val">-</span></div>
-        <div class="col">🪣Total : <span class="total-val">-</span></div>
-      </div>
-      <div class="section-title">🗑️ Trashcan Volume :</div>
-      <div class="bars">
-        <div class="bar-container">
-          <div class="bar"><div class="fill-plastic-bar" style="height:0%"></div></div>
-          <div class="label">Plastik (<span class="plastic-text">-</span>%)</div>
-        </div>
-        <div class="bar-container">
-          <div class="bar"><div class="fill-can-bar" style="height:0%"></div></div>
-          <div class="label">Kaleng (<span class="can-text">-</span>%)</div>
-        </div>
-        <div class="bar-container cumulative-container">
-          <div>Total Plastik: <br><span class="total-plastic-cum">0</span>%</div>
-          <div>Total Kaleng: <br><span class="total-can-cum">0</span>%</div>
+        <div class="rvm-meta">
+          <div class="rvm-uptime">Waktu Aktif : -</div>
+          <div class="rvm-lastseen">Terakhir Aktif : -</div>
         </div>
       </div>
-      <button class="history-btn" id="mapHistoryBtn" data-rvm="">History</button>
+
+      <div class="card-body-custom">
+        <div class="card-left-col">
+          <div class="section-title">Volume sampah waktu nyata</div>
+          <div class="volume-bars-custom">
+            <div class="vol-bar-container">
+              <div class="vol-bar">
+                <img src="plastik.png" class="bg-img" alt="botol plastik">
+                <div class="fill-plastic-bar" style="height:0%"></div>
+              </div>
+              <div class="vol-label">Plastik (<span class="plastic-text">-</span>%)</div>
+            </div>
+            <div class="vol-bar-container">
+              <div class="vol-bar">
+                <img src="kaleng.png" class="bg-img" alt="kaleng">
+                <div class="fill-can-bar" style="height:0%"></div>
+              </div>
+              <div class="vol-label">Kaleng (<span class="can-text">-</span>%)</div>
+            </div>
+          </div>
+
+          <div class="section-title">Counting waktu nyata</div>
+          <div class="counting-boxes">
+            <div class="count-box">
+              <img src="plastik.png" alt="plastik icon" class="icon-img">
+              <span class="plastic-val">-</span>
+            </div>
+            <div class="count-box">
+              <img src="kaleng.png" alt="kaleng icon" class="icon-img">
+              <span class="can-val">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-right-col">
+          <div>
+            <div class="section-title">Total hari ini</div>
+            <div class="totals-container">
+              <div class="total-item">
+                <img src="plastik.png" alt="plastik icon" class="icon-img-large">
+                <span><span class="total-plastic-cum">0</span>%</span>
+              </div>
+              <div class="total-item">
+                <img src="kaleng.png" alt="kaleng icon" class="icon-img-large">
+                <span><span class="total-can-cum">0</span>%</span>
+              </div>
+            </div>
+          </div>
+          <button class="history-btn history-btn-custom" data-rvm="1">History</button>
+        </div>
+      </div>
     </section>
   </div>
 </main>

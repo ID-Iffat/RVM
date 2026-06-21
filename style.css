@@ -448,3 +448,201 @@ table th{
   font-size: 1.2rem; /* Make the numbers pop a bit more */
   color: var(--text);
 }
+
+/* --- NEW CARD DESIGN STYLES --- */
+.status-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.status-title-row .status-dot {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.status-title-row .rvm-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.card-header-custom .rvm-uptime,
+.card-header-custom .rvm-lastseen {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  margin-top: 4px;
+}
+
+.card-body-custom {
+  display: flex;
+  margin-top: 20px;
+}
+
+.card-left-col {
+  flex: 1.6; /* Takes up slightly more room */
+  padding-right: 15px;
+}
+
+.card-divider {
+  width: 2px;
+  background: var(--border);
+  margin: 0 15px;
+  border-radius: 2px;
+}
+
+.card-right-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-left: 5px;
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 0.90rem;
+  margin-bottom: 12px;
+}
+
+/* Volume Bars */
+.volume-bars-custom {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.vol-bar-container {
+  flex: 1;
+  text-align: center;
+}
+
+.vol-bar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  height: 170px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vol-bar .bg-img {
+  max-height: 75%;
+  max-width: 75%;
+  object-fit: contain;
+  opacity: 0.85;
+  z-index: 1; /* Puts the image behind the semi-transparent fill */
+}
+
+/* Dynamic fill styling */
+.fill-plastic-bar, .fill-can-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0.6; /* Allows the PNG image underneath to show through the color */
+  z-index: 2;
+  transition: height 0.5s ease, background-color 0.5s ease;
+}
+
+.vol-label {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* Counting Boxes */
+.counting-boxes {
+  display: flex;
+  gap: 15px;
+}
+
+.count-box {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.count-box .icon-img {
+  height: 28px;
+  object-fit: contain;
+}
+
+/* Totals Sidebar */
+.totals-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 15px;
+}
+
+.total-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.total-item .icon-img-large {
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Updated History Button */
+.history-btn-custom {
+  background: #1d4ed8; /* Blue from mockup */
+  border-radius: 12px;
+  font-size: 1.1rem;
+  padding: 14px 0;
+}
+
+/* Header Logo */
+.header-logo {
+  height: 75px; /* Adjust this number to make the logo larger or smaller */
+  max-width: 250px;
+  object-fit: contain;
+}
+
+/* --- MOBILE HEADER FIXES --- */
+@media (max-width: 768px) {
+  header {
+    padding: 16px 20px; 
+    align-items: center; 
+  }
+  
+  .header-logo {
+    max-width: 140px; /* Scales the logo down so it fits */
+    height: auto;
+  }
+  
+  .header-buttons {
+    display: flex;
+    flex-direction: column; /* Stacks the buttons vertically on mobile */
+    align-items: flex-end; /* Forces the buttons to stick to the right edge */
+    gap: 8px; /* Adds a small gap between the stacked buttons */
+  }
+  
+  .enable-notif {
+    padding: 8px 12px;
+    font-size: 0.8rem; /* Makes the button text slightly smaller */
+  }
+
+  /* Optional: Drop the section title size even further just for mobile if needed */
+  .section-title {
+    font-size: 0.9rem;
+  }
+}
