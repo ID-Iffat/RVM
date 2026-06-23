@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RVM Dashboard - Map View</title>
+<title>VTelYU-Map View</title>
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -71,11 +71,15 @@
   <img src="VTelYU.png" alt="VTelYU Logo" class="header-logo">
   <div class="header-buttons">
   <div class="header-buttons">
+    <button class="enable-notif" onclick="startTracking()" style="background-color: #3b82f6;">📍 Nyalakan lokasi</button>
     <button class="enable-notif" onclick="window.location.href='index.html'">Lihat semua unit</button>
   </div>
 </header>
 
 <main id="dashboard">
+  <div id="proximity-alert" style="display: none; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #10b981; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    Kamu berada di dekat RVM!
+  </div>
   <div id="map"></div>
 
   <div id="active-card-container">
@@ -481,6 +485,79 @@ document.getElementById('closeHistory').addEventListener('click',closeHistory);
 document.getElementById('backdrop').addEventListener('click',closeHistory);
 document.getElementById("dailyScale").addEventListener("change", (e)=>{dailyMax = Number(e.target.value); renderWeek(); });
 document.getElementById("weeklyScale").addEventListener("change", (e)=>{weeklyMax = Number(e.target.value); renderWeek(); });
+
+let userMarker = null;
+let userAccuracyCircle = null;
+const PROXIMITY_RADIUS_METERS = 10;
+function startTracking() {
+  if (!navigator.geolocation) {
+    alert("Maaf, browser kamu tidak mendukung fitur GPS.");
+    return;
+  }
+  alert("Meminta akses lokasi...");
+  navigator.geolocation.watchPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+      const userLatLng = L.latLng(lat, lng);
+      if (!userMarker) {
+        userMarker = L.circleMarker(userLatLng, {
+          radius: 8,
+          fillColor: "#3b82f6",
+          color: "#ffffff",
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9,
+          zIndexOffset: 1000
+        }).addTo(map).bindTooltip("Lokasi Kamu");
+        userAccuracyCircle = L.circle(userLatLng, {
+          radius: accuracy,
+          color: "#3b82f6",
+          fillOpacity: 0.1,
+          weight: 1
+        }).addTo(map);
+        map.setView(userLatLng, 18);
+      } else {
+        userMarker.setLatLng(userLatLng);
+        userAccuracyCircle.setLatLng(userLatLng);
+        userAccuracyCircle.setRadius(accuracy);
+      }
+      checkProximity(userLatLng);
+    },
+    (error) => {
+      console.error("Error watching position:", error);
+      alert("Gagal mendapatkan lokasi. Pastikan GPS aktif dan izin diberikan.");
+    },
+    {
+      enableHighAccuracy: true, 
+      maximumAge: 10000, 
+      timeout: 10000
+    }
+  );
+}
+function checkProximity(userLatLng) {
+  if (!latestData || latestData.length === 0) return;
+  let isNearAnyRVM = false;
+  latestData.forEach(device => {
+    if (device.location && device.location.includes(',')) {
+      const parts = device.location.split(',');
+      const deviceLat = parseFloat(parts[0]);
+      const deviceLng = parseFloat(parts[1]);
+      const deviceLatLng = L.latLng(deviceLat, deviceLng);
+      const distanceInMeters = map.distance(userLatLng, deviceLatLng);
+      if (distanceInMeters <= PROXIMITY_RADIUS_METERS) {
+        isNearAnyRVM = true;
+      }
+    }
+  });
+  const alertBanner = document.getElementById('proximity-alert');
+  if (isNearAnyRVM) {
+    alertBanner.style.display = 'block';
+  } else {
+    alertBanner.style.display = 'none';
+  }
+}
 </script>
 
 </body>
