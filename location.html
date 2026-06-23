@@ -488,7 +488,7 @@ document.getElementById("weeklyScale").addEventListener("change", (e)=>{weeklyMa
 
 let userMarker = null;
 let userAccuracyCircle = null;
-const PROXIMITY_RADIUS_METERS = 10;
+const PROXIMITY_RADIUS_METERS = 25;
 function startTracking() {
   if (!navigator.geolocation) {
     alert("Maaf, browser kamu tidak mendukung fitur GPS.");
