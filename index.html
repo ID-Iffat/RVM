@@ -305,18 +305,14 @@ async function fetchCounts(){
       uptimeEl.innerText ="Waktu Aktif : " + formatUptime(device.uptime);
       lastSeenEl.innerText ="Terakhir Aktif : " + formatLastSeen(device.lastSeen);
       
-      // Compute cumulative processing values on frontend
-      const rvmKey = `RVM${rvmId}`;
-      const plasticCum = updateCumulative(rvmKey, 'plastic', Number(device.plasticVolume || 0));
-      const canCum = updateCumulative(rvmKey, 'can', Number(device.canVolume || 0));
-      
+      // Compute cumulative processing values on frontend     
       const values = {
         plastic: Number(device.plastic || 0),
         can: Number(device.can || 0),
         pPct: Number(device.plasticVolume || 0),
         cPct: Number(device.canVolume || 0),
-        pCum: plasticCum,
-        cCum: canCum
+        pCum: Number(device.plasticCum || 0),
+        cCum: Number(device.canCum || 0)
       };
       updateCardFromValues(card, values);
     });
