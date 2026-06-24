@@ -316,8 +316,8 @@ function refreshActiveCard() {
   card.querySelector('.rvm-lastseen').innerText = "Last seen: " + formatLastSeen(device.lastSeen);
   card.querySelector('.history-btn').setAttribute('data-rvm', selectedRvmId);
 
-  const plasticCum = updateCumulative(device.device_id, 'plastic', Number(device.plasticVolume || 0));
-  const canCum = updateCumulative(device.device_id, 'can', Number(device.canVolume || 0));
+  const plasticCum = Number(device.plasticCum || 0);
+  const canCum = Number(device.canCum || 0);
 
   const pPct = pctClamp(Number(device.plasticVolume || 0));
   const cPct = pctClamp(Number(device.canVolume || 0));
