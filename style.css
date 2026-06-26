@@ -280,6 +280,7 @@ main{
 
 /* --- CAMERA MODAL OVERLAY --- */
 #cameraOverlay {
+  display: none;
   position: fixed;
   top: 0;
   left: 0;

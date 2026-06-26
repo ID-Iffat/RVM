@@ -331,6 +331,7 @@ function refreshActiveCard() {
   card.querySelector('.rvm-uptime').innerText = "Uptime: " + formatUptime(device.uptime);
   card.querySelector('.rvm-lastseen').innerText = "Last seen: " + formatLastSeen(device.lastSeen);
   card.querySelector('.rvm-location').innerText = "Lokasi : " + (device.locationName || "-");
+  card.querySelector('.camera-btn').setAttribute('data-rvm', selectedRvmId);
   card.querySelector('.history-btn').setAttribute('data-rvm', selectedRvmId);
 
   const plasticCum = Number(device.plasticCum || 0);
