@@ -489,6 +489,15 @@ function closeHistory(){
   hist.style.display='none'; hist.setAttribute('aria-hidden','true'); destroyCharts();
 }
 
+// This listener handles the "Live Feed" button inside your map cards
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.camera-btn');
+  if (btn) {
+    const rvm = btn.getAttribute('data-rvm');
+    if (rvm) openCamera(rvm);
+  }
+});
+
 // Function to open the camera modal
 function openCamera(rvmId) {
   const overlay = document.getElementById('cameraOverlay');
@@ -501,10 +510,9 @@ function openCamera(rvmId) {
   overlay.setAttribute('aria-hidden', 'false');
 }
 
+// Ensure the close button works
 document.getElementById('closeCamera').addEventListener('click', () => {
-  const overlay = document.getElementById('cameraOverlay');
-  overlay.style.display = 'none';
-  overlay.setAttribute('aria-hidden', 'true');
+  document.getElementById('cameraOverlay').style.display = 'none';
   document.getElementById('cameraFeed').src = ""; 
 });
 
@@ -534,14 +542,6 @@ document.getElementById('closeCamera').addEventListener('click', () => {
 //   document.getElementById('cameraOverlay').style.display = 'none';
 //   document.getElementById('cameraFrame').src = ""; // Stop the stream
 // });
-
-document.addEventListener('click', function(e) {
-  const btn = e.target.closest('.camera-btn');
-  if (btn) {
-    const rvm = Number(btn.getAttribute('data-rvm')) || Number(btn.closest('.card').getAttribute('data-rvm'));
-    if (rvm) openCamera(rvm);
-  }
-});
 
 document.addEventListener('click',function(e){
   const btn=e.target.closest('.history-btn'); 
