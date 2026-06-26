@@ -32,6 +32,7 @@
       <div class="rvm-meta">
         <div class="rvm-uptime">Waktu Aktif : -</div>
         <div class="rvm-lastseen">Terakhir Aktif : -</div>
+        <div class="rvm-location">Lokasi : -</div>
       </div>
     </div>
 
@@ -84,11 +85,26 @@
             </div>
           </div>
         </div>
+        <button class="camera-btn camera-btn-custom" data-rvm="1">Live Feed</button>
         <button class="history-btn history-btn-custom" data-rvm="1">History</button>
       </div>
     </div>
   </section>
 </main>
+
+<div id="cameraOverlay" aria-hidden="true">
+  <div class="camera-card">
+    <div class="header-row">
+      <h2 id="cameraTitle">Live Feed</h2>
+      <button id="closeCamera">Close</button>
+    </div>
+    <div class="feed-container">
+      <img id="cameraFeed" src="" alt="Camera Feed">
+      <!-- pake yg bawah klo beneran pake kamera -->
+      <!-- <iframe id="cameraFrame" src="" frameborder="0" allowfullscreen></iframe> -->
+    </div>
+  </div>
+</div>
 
 <div id="backdrop" aria-hidden="true"></div>
 <div id="historyContainer" aria-hidden="true">
@@ -206,18 +222,19 @@ function generateCardsFromDevices(devices){
   const dashboard = document.getElementById('dashboard');
   const template = dashboard.querySelector('[data-template="true"]');
   dashboard.innerHTML = '';
+  dashboard.appendChild(template);
+
   devices.forEach((device, index)=>{
     const clone = template.cloneNode(true);
+    clone.style.display = 'block'; // Make sure the clone is visible
+    clone.removeAttribute('data-template'); // It's no longer the template
     const rvmId = device.device_id.replace(/RVM/i,'');
     clone.setAttribute('data-rvm', rvmId);
-    const formattedId = device.device_id.replace(/(RVM)(\d+)/i, '$1 $2');
-    clone.querySelector('.rvm-title').innerText = formattedId;
+    clone.querySelector('.rvm-title').innerText = device.device_id;
+    clone.querySelector('.camera-btn').setAttribute('data-rvm', rvmId);
+    clone.querySelector('.history-btn').setAttribute('data-rvm', rvmId);
     clone.querySelector('.status-dot').classList.remove('online','offline');
     clone.querySelector('.status-dot').classList.add(device.status==="online" ? "online":"offline");
-    clone.querySelector('.status-text').innerText = device.status==="online" ? "Online":"Offline";
-    clone.querySelector('.rvm-uptime').innerText = "Waktu Aktif : " + formatUptime(device.uptime);
-    clone.querySelector('.rvm-lastseen').innerText = "Terakhir Aktif : " + formatLastSeen(device.lastSeen);
-    clone.querySelector('.history-btn').setAttribute('data-rvm', rvmId);
     dashboard.appendChild(clone);
   });
 }
@@ -294,6 +311,7 @@ async function fetchCounts(){
       const statusText = card.querySelector('.status-text');
       const uptimeEl = card.querySelector('.rvm-uptime');
       const lastSeenEl = card.querySelector('.rvm-lastseen');
+      const locationEl = card.querySelector('.rvm-location');
       statusDot.classList.remove('online','offline');
       if(device.status==="online"){
         statusDot.classList.add('online');
@@ -304,8 +322,11 @@ async function fetchCounts(){
       }
       uptimeEl.innerText ="Waktu Aktif : " + formatUptime(device.uptime);
       lastSeenEl.innerText ="Terakhir Aktif : " + formatLastSeen(device.lastSeen);
+      if(locationEl) {
+        locationEl.innerText = "Lokasi : " + (device.locationName || "-");
+      }
       
-      // Compute cumulative processing values on frontend     
+      // Compute cumulative processing values on frontend
       const values = {
         plastic: Number(device.plastic || 0),
         can: Number(device.can || 0),
@@ -330,6 +351,60 @@ function stopAutoFetch(){
   clearInterval(fetchIntervalId); 
   fetchIntervalId=null;
 }
+
+// Function to open the camera modal
+function openCamera(rvmId) {
+  const overlay = document.getElementById('cameraOverlay');
+  const title = document.getElementById('cameraTitle');
+  const feed = document.getElementById('cameraFeed');
+
+  title.innerText = `Live Feed - RVM ${rvmId}`;
+  feed.src = `camera-mock/rvm${rvmId}.jpg`; 
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+document.getElementById('closeCamera').addEventListener('click', () => {
+  const overlay = document.getElementById('cameraOverlay');
+  overlay.style.display = 'none';
+  overlay.setAttribute('aria-hidden', 'true');
+  document.getElementById('cameraFeed').src = ""; 
+});
+
+// dipake klo dh ad kamera asli, sementara pake yg atas
+// function openCamera(rvmId) {
+//   const overlay = document.getElementById('cameraOverlay');
+//   const title = document.getElementById('cameraTitle');
+//   const frame = document.getElementById('cameraFrame');
+
+//   title.innerText = `Live Feed - RVM ${rvmId}`;
+  
+//   // Here, map your RVM IDs to their specific Cloud Streaming URLs
+//   const cameraUrls = {
+//     1: "https://ipcamlive.com/your_first_camera_link",
+//     2: "https://ipcamlive.com/your_second_camera_link"
+//     // add more as needed
+//   };
+
+//   frame.src = cameraUrls[rvmId] || ""; 
+
+//   overlay.style.display = 'flex';
+//   overlay.setAttribute('aria-hidden', 'false');
+// }
+
+// // Update close function
+// document.getElementById('closeCamera').addEventListener('click', () => {
+//   document.getElementById('cameraOverlay').style.display = 'none';
+//   document.getElementById('cameraFrame').src = ""; // Stop the stream
+// });
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.camera-btn');
+  if (btn) {
+    const rvm = Number(btn.getAttribute('data-rvm')) || Number(btn.closest('.card').getAttribute('data-rvm'));
+    if (rvm) openCamera(rvm);
+  }
+});
 
 // History & Charts
 let historyData=[], weekIndex=0, dailyChartInstance=null, weeklyChartInstance=null, dailyMax = 1000, weeklyMax = 10000;

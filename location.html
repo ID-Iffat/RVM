@@ -96,6 +96,7 @@
         <div class="rvm-meta">
           <div class="rvm-uptime">Waktu Aktif : -</div>
           <div class="rvm-lastseen">Terakhir Aktif : -</div>
+          <div class="rvm-location">Lokasi : -</div>
         </div>
       </div>
 
@@ -148,12 +149,27 @@
               </div>
             </div>
           </div>
+          <button class="camera-btn camera-btn-custom" data-rvm="1">Live Feed</button>
           <button class="history-btn history-btn-custom" data-rvm="1">History</button>
         </div>
       </div>
     </section>
   </div>
 </main>
+
+<div id="cameraOverlay" aria-hidden="true">
+  <div class="camera-card">
+    <div class="header-row">
+      <h2 id="cameraTitle">Live Feed</h2>
+      <button id="closeCamera">Close</button>
+    </div>
+    <div class="feed-container">
+      <img id="cameraFeed" src="" alt="Camera Feed">
+      <!-- pake yg bawah klo beneran pake kamera -->
+      <!-- <iframe id="cameraFrame" src="" frameborder="0" allowfullscreen></iframe> -->
+    </div>
+  </div>
+</div>
 
 <div id="backdrop" aria-hidden="true"></div>
 <div id="historyContainer" aria-hidden="true">
@@ -216,8 +232,8 @@ const FETCH_INTERVAL_MS = 5000;
 // ===== MAP INITIALIZATION =====
 // Define the exact boundaries you provided
 const bounds = [
-  [-6.968250808645863, 107.62530278669844], // North West, kiri atas map
-  [-6.978261314204777, 107.63348888854554] // South East, kanan bawah map
+  [-6.968674773896329, 107.62667198856248], // North West
+  [-6.9775940601993005, 107.63320380035844] // South East
 ];
 
 const map = L.map('map', {
@@ -314,6 +330,7 @@ function refreshActiveCard() {
   card.querySelector('.status-text').innerText = device.status === "online" ? "Online" : "Offline";
   card.querySelector('.rvm-uptime').innerText = "Uptime: " + formatUptime(device.uptime);
   card.querySelector('.rvm-lastseen').innerText = "Last seen: " + formatLastSeen(device.lastSeen);
+  card.querySelector('.rvm-location').innerText = "Lokasi : " + (device.locationName || "-");
   card.querySelector('.history-btn').setAttribute('data-rvm', selectedRvmId);
 
   const plasticCum = Number(device.plasticCum || 0);
@@ -472,6 +489,60 @@ function closeHistory(){
   hist.style.display='none'; hist.setAttribute('aria-hidden','true'); destroyCharts();
 }
 
+// Function to open the camera modal
+function openCamera(rvmId) {
+  const overlay = document.getElementById('cameraOverlay');
+  const title = document.getElementById('cameraTitle');
+  const feed = document.getElementById('cameraFeed');
+
+  title.innerText = `Live Feed - RVM ${rvmId}`;
+  feed.src = `camera-mock/rvm${rvmId}.jpg`; 
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+document.getElementById('closeCamera').addEventListener('click', () => {
+  const overlay = document.getElementById('cameraOverlay');
+  overlay.style.display = 'none';
+  overlay.setAttribute('aria-hidden', 'true');
+  document.getElementById('cameraFeed').src = ""; 
+});
+
+// dipake klo dh ad kamera asli, sementara pake yg atas
+// function openCamera(rvmId) {
+//   const overlay = document.getElementById('cameraOverlay');
+//   const title = document.getElementById('cameraTitle');
+//   const frame = document.getElementById('cameraFrame');
+
+//   title.innerText = `Live Feed - RVM ${rvmId}`;
+  
+//   // Here, map your RVM IDs to their specific Cloud Streaming URLs
+//   const cameraUrls = {
+//     1: "https://ipcamlive.com/your_first_camera_link",
+//     2: "https://ipcamlive.com/your_second_camera_link"
+//     // add more as needed
+//   };
+
+//   frame.src = cameraUrls[rvmId] || ""; 
+
+//   overlay.style.display = 'flex';
+//   overlay.setAttribute('aria-hidden', 'false');
+// }
+
+// // Update close function
+// document.getElementById('closeCamera').addEventListener('click', () => {
+//   document.getElementById('cameraOverlay').style.display = 'none';
+//   document.getElementById('cameraFrame').src = ""; // Stop the stream
+// });
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.camera-btn');
+  if (btn) {
+    const rvm = Number(btn.getAttribute('data-rvm')) || Number(btn.closest('.card').getAttribute('data-rvm'));
+    if (rvm) openCamera(rvm);
+  }
+});
+
 document.addEventListener('click',function(e){
   const btn=e.target.closest('.history-btn'); 
   if(btn && btn.id !== "prevWeekBtn" && btn.id !== "nextWeekBtn"){
@@ -488,7 +559,7 @@ document.getElementById("weeklyScale").addEventListener("change", (e)=>{weeklyMa
 
 let userMarker = null;
 let userAccuracyCircle = null;
-const PROXIMITY_RADIUS_METERS = 25;
+const PROXIMITY_RADIUS_METERS = 10;
 function startTracking() {
   if (!navigator.geolocation) {
     alert("Maaf, browser kamu tidak mendukung fitur GPS.");
